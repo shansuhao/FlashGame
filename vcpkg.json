@@ -1,5 +1,7 @@
 {
   "dependencies": [
-    "fmt"
+    "glew",
+    "opengl",
+    "glfw3"
   ]
 }

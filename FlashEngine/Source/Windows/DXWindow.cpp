@@ -29,8 +29,8 @@ bool DXWindow::Init(LPCWSTR p_ClassName, LPCWSTR p_WndName, int32_t p_icon, UINT
 		p_ClassName,
 		p_ClassName,
 		WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-		monitorInfo.rcWork.left + 100,
-		monitorInfo.rcWork.top + 100,
+		monitorInfo.rcWork.left + 10,
+		monitorInfo.rcWork.top + 10,
 		m_Width = p_width,
 		m_Height = p_height,
 		NULL, NULL, hInstance, NULL
@@ -54,6 +54,42 @@ void DXWindow::Shutdown()
 {
 }
 
+void DXWindow::SetFullscreen(bool enabled)
+{
+	// Update window styling
+	DWORD style = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+	DWORD exStyle = WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW;
+	if (enabled)
+	{
+		style = WS_POPUP | WS_VISIBLE;
+		exStyle = WS_EX_APPWINDOW;
+	}
+	SetWindowLongW(DXWindow::Get().GetHWND(), GWL_STYLE, style);
+	SetWindowLongW(DXWindow::Get().GetHWND(), GWL_EXSTYLE, exStyle);
+
+	if (enabled)
+	{
+		HMONITOR monitor = MonitorFromWindow(DXWindow::Get().GetHWND(), MONITOR_DEFAULTTONEAREST);
+		MONITORINFO monitorInfo{};
+		monitorInfo.cbSize = sizeof(monitorInfo);
+		if (GetMonitorInfoW(monitor, &monitorInfo))
+		{
+			SetWindowPos(DXWindow::Get().GetHWND(), nullptr,
+				monitorInfo.rcMonitor.left,
+				monitorInfo.rcMonitor.top,
+				monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
+				monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+				SWP_NOZORDER
+			);
+		}
+	}
+	else
+	{
+		ShowWindow(DXWindow::Get().GetHWND(), SW_MAXIMIZE);
+	}
+	m_FullWindow = enabled;
+}
+
 
 
 LRESULT DXWindow::OnWindowMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -63,6 +99,12 @@ LRESULT DXWindow::OnWindowMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	case WM_CLOSE :
 		Get().m_ShouldClose = true;
 		return 0;
+	case WM_KEYDOWN:
+		if (true)
+		{
+			Get().SetFullscreen( !Get().GetFullWindow() );
+		}
+		break;
 	default:
 		break;
 	}
