@@ -5,6 +5,8 @@
 #include <GL/glu.h>
 #include <ctime>
 
+#include "Log/D3DLog.h"
+
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "glu32.lib")
 
@@ -12,9 +14,6 @@ struct FColor
 {
 	float R, G, B, A = 0;
 };
-
-int  success;
-char infoLog[512];
 
 static FColor background = { 0.f, 0.8f, 0.8f, 0.f };
 static float g_width = WND_WIDTH;
@@ -53,8 +52,6 @@ void UpdateWindow(HWND hwnd, HDC hdc, HGLRC hglrc);
 void Render();
 void RenderTriangle(unsigned int& VBO, unsigned int& VAO, float* vertices, size_t size);
 void CompileShader(unsigned int& shaderProgram, const char* vertexShaderSource, const char* fragmentShaderSource);
-
-void PrintLog(unsigned int, GLuint);
 
 int main(int argc, char* argv) {
 	HDC hdc = {};
@@ -267,37 +264,25 @@ void CompileShader(unsigned int& shaderProgram, const char* vertexShaderSource, 
 
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 	glCompileShader(vertexShader);
-	PrintLog(vertexShader, GL_COMPILE_STATUS);
+	D3DLog::Get().PrintLog(vertexShader, GL_COMPILE_STATUS);
 
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
 	glCompileShader(fragmentShader);
-	PrintLog(fragmentShader, GL_COMPILE_STATUS);
+	D3DLog::Get().PrintLog(fragmentShader, GL_COMPILE_STATUS);
 
 	// 创建着色器程序，绑定着色器，并完成链接
 	shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, vertexShader);
 	glAttachShader(shaderProgram, fragmentShader);
 	glLinkProgram(shaderProgram);
-	PrintLog(shaderProgram, GL_LINK_STATUS);
+	D3DLog::Get().PrintLog(shaderProgram, GL_LINK_STATUS);
 
 	glUseProgram(shaderProgram);
 
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 }
-
-void PrintLog(unsigned int target, GLuint type)
-{
-	glGetShaderiv(target, type, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(target, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-}
-
-
 
 void UpdateWindow(HWND hwnd, HDC hdc, HGLRC hglrc)
 {

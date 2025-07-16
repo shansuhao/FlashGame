@@ -39,6 +39,9 @@
     <ClInclude Include="Source\Shader\OpenGLShader.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Log\D3DLog.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\pch.cpp">

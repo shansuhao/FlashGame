@@ -160,6 +160,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Log\D3DLog.h" />
     <ClInclude Include="Source\Shader\OpenGLShader.h" />
     <ClInclude Include="Source\Utils\ComPointer.h" />
     <ClInclude Include="Source\D3D\DXContext.h" />
