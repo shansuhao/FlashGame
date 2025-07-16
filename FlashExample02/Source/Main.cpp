@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <ctime>
 
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "glu32.lib")
@@ -21,25 +22,31 @@ static float g_height = WND_HEIGHT;
 
 const char* g_vertexShaderSource = "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
-//"layout (location = 1) in vec3 aColor;\n"
+"layout (location = 1) in vec3 aColor;\n"
+"out vec4 vertexColor;\n"
 "void main()\n"
 "{\n"
 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"	vertexColor = vec4(aColor.xyz, 1.0);\n"
 "}\0";
 
 const char* g_fragmentShaderSource_1 = "#version 330 core \n"
 "out vec4 FragColor;\n"
+"in vec4 vertexColor;\n"
 "void main()\n"
 "{\n"
-"	FragColor = vec4(0.0f, 0.5f, 0.2f, 1.0f);\n"
+"	FragColor = vertexColor;\n"
 "}\0";
 
 const char* g_fragmentShaderSource_2 = "#version 330 core \n"
 "out vec4 FragColor;\n"
+"uniform vec4 ourColor;\n"
 "void main()\n"
 "{\n"
-"	FragColor = vec4(1.0f, 0.2f, 0.8f, 1.0f);\n"
+"	FragColor = ourColor;\n"
 "}\0";
+
+float g_time = 0.f;
 
 bool OpenGLInit(__in HWND p_hwnd, __out HDC& p_hdc, __out HGLRC& p_hglrc);
 void UpdateWindow(HWND hwnd, HDC hdc, HGLRC hglrc);
@@ -85,10 +92,10 @@ int main(int argc, char* argv) {
 
 		// 绘制矩形 方案2
 		float vertices[] = {
-			0.5f, 0.5f, 0.0f,   // 右上角
-			0.5f, -0.5f, 0.0f,  // 右下角
-			-0.5f, -0.5f, 0.0f, // 左下角
-			-0.5f, 0.5f, 0.0f   // 左上角
+			 0.5f,  0.5f, 0.0f,   1.f,0.f,0.f,// 右上角
+			 0.5f, -0.5f, 0.0f,	  0.f,1.f,0.f,// 右下角
+			-0.5f, -0.5f, 0.0f,	  1.f,0.f,0.f,// 左下角
+			-0.5f,  0.5f, 0.0f,   0.f,0.f,1.f,// 左上角
 		};
 
 		unsigned int indices[] = {
@@ -114,9 +121,11 @@ int main(int argc, char* argv) {
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 		// 设置顶点属性指针
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-		//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
+
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
@@ -139,10 +148,13 @@ int main(int argc, char* argv) {
 		//RenderTriangle(VBO_2, VAO_2, vertices_2, sizeof(vertices_2));
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
+		std::cout << "Tick Count:" << GetTickCount() << std::endl;
 		DXWindow::Get().SetFullscreen(TRUE);
 		while (!DXWindow::Get().ShouldClose())
 		{
+			//time += (1 / GetTickCount());
+
+			g_time += 0.001;
 			DXWindow::Get().UpdateWindow();
 			UpdateWindow(DXWindow::Get().GetHWND(), hdc, hglrc);
 
@@ -157,8 +169,11 @@ int main(int argc, char* argv) {
 			// 绘制矩形 方案2
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); glBindVertexArray(0);
 
-
 			glUseProgram(shaderProgram_2);
+
+			int vertexColorLocation = glGetUniformLocation(shaderProgram_2, "ourColor");
+			glUniform4f(vertexColorLocation, sin(g_time), cos(g_time), tan(g_time), sin(g_time));
+
 			glBindVertexArray(VAO_1);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
 			//glBindVertexArray(VAO_2);

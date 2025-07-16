@@ -36,6 +36,9 @@
     <ClInclude Include="Source\Utils\ComPointer.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Shader\OpenGLShader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\pch.cpp">
@@ -48,6 +51,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\Debug\DXDebugLayer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Shader\OpenGLShader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

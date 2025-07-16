@@ -160,6 +160,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Shader\OpenGLShader.h" />
     <ClInclude Include="Source\Utils\ComPointer.h" />
     <ClInclude Include="Source\D3D\DXContext.h" />
     <ClInclude Include="Source\Debug\DXDebugLayer.h" />
@@ -169,6 +170,7 @@
     <ClInclude Include="Source\Windows\DXWindow.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Shader\OpenGLShader.cpp" />
     <ClCompile Include="Source\D3D\DXContext.cpp" />
     <ClCompile Include="Source\Debug\DXDebugLayer.cpp" />
     <ClCompile Include="Source\pch.cpp">
