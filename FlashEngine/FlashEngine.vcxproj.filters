@@ -39,7 +39,10 @@
     <ClInclude Include="Source\Shader\OpenGLShader.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Log\D3DLog.h">
+    <ClInclude Include="Source\Log\Logger.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\OpenGL\OpenGlLibary.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -57,6 +60,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\Shader\OpenGLShader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Log\Logger.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

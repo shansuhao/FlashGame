@@ -37,4 +37,8 @@
       <Filter>资源文件</Filter>
     </ResourceCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shader\vertex.glsl" />
+    <None Include="Shader\fragment.glsl" />
+  </ItemGroup>
 </Project>

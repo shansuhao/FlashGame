@@ -1,14 +1,12 @@
 #include "FlashExample.h"
 
-#include <GL/glew.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <ctime>
+#include "Shader/OpenGLShader.h"
+#include "Log/Logger.h"
 
-#include "Log/D3DLog.h"
+#include <GL/glew.h>
+#include <GL/GL.h>
 
 #pragma comment(lib, "opengl32.lib")
-#pragma comment(lib, "glu32.lib")
 
 struct FColor
 {
@@ -63,11 +61,12 @@ int main(int argc, char* argv) {
 			return 0;
 		}
 
+		OpenGLShader shader("./Shader/vertex.glsl","./Shader/fragment.glsl");
 
-		unsigned int shaderProgram_1, shaderProgram_2;
+		//unsigned int shaderProgram_1, shaderProgram_2;
 
-		CompileShader(shaderProgram_1, g_vertexShaderSource, g_fragmentShaderSource_1);
-		CompileShader(shaderProgram_2, g_vertexShaderSource, g_fragmentShaderSource_2);
+		//CompileShader(shaderProgram_1, g_vertexShaderSource, g_fragmentShaderSource_1);
+		//CompileShader(shaderProgram_2, g_vertexShaderSource, g_fragmentShaderSource_2);
 
 		//float vertices[] = {
 		//-0.5f, -0.5f, 0.0f,
@@ -88,8 +87,15 @@ int main(int argc, char* argv) {
 		//};
 
 		// 绘制矩形 方案2
+		//float vertices[] = {
+		//	 0.5f,  0.5f, 0.0f,   1.f,0.f,0.f,// 右上角
+		//	 0.5f, -0.5f, 0.0f,	  0.f,1.f,0.f,// 右下角
+		//	-0.5f, -0.5f, 0.0f,	  1.f,0.f,0.f,// 左下角
+		//	-0.5f,  0.5f, 0.0f,   0.f,0.f,1.f,// 左上角
+		//};
+
 		float vertices[] = {
-			 0.5f,  0.5f, 0.0f,   1.f,0.f,0.f,// 右上角
+			 0.0f,  0.5f, 0.0f,   1.f,0.f,0.f,// 右上角
 			 0.5f, -0.5f, 0.0f,	  0.f,1.f,0.f,// 右下角
 			-0.5f, -0.5f, 0.0f,	  1.f,0.f,0.f,// 左下角
 			-0.5f,  0.5f, 0.0f,   0.f,0.f,1.f,// 左上角
@@ -100,8 +106,8 @@ int main(int argc, char* argv) {
 			// 此例的索引(0,1,2,3)就是顶点数组vertices的下标，
 			// 这样可以由下标代表顶点组合成矩形
 
-			0, 1, 3, // 第一个三角形
-			1, 2, 3  // 第二个三角形
+			0, 1, 2, // 第一个三角形
+			//1, 2, 3  // 第二个三角形
 		};
 
 		unsigned int VBO, VAO, EBO;
@@ -127,11 +133,11 @@ int main(int argc, char* argv) {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 
-		float vertices_1[] = {
-			0.5f, 0.5f, 0.0f,   // 右上角
-			0.5f, -0.5f, 0.0f,  // 右下角
-			-0.5f, 0.5f, 0.0f,  // 左上角
-		};
+		//float vertices_1[] = {
+		//	0.5f, 0.5f, 0.0f,   // 右上角
+		//	0.5f, -0.5f, 0.0f,  // 右下角
+		//	-0.5f, 0.5f, 0.0f,  // 左上角
+		//};
 
 		//float vertices_2[] = {
 		//	0.5f, -0.5f, 0.0f,  // 右下角
@@ -139,9 +145,9 @@ int main(int argc, char* argv) {
 		//	-0.5f, 0.5f, 0.0f   // 左上角
 		//};
 
-		unsigned int VBO_1, VAO_1, VBO_2, VAO_2;
+		//unsigned int VBO_1, VAO_1, VBO_2, VAO_2;
 
-		RenderTriangle(VBO_1, VAO_1, vertices_1, sizeof(vertices_1));
+		//RenderTriangle(VBO_1, VAO_1, vertices_1, sizeof(vertices_1));
 		//RenderTriangle(VBO_2, VAO_2, vertices_2, sizeof(vertices_2));
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -157,22 +163,25 @@ int main(int argc, char* argv) {
 
 			//Render();
 
-			glUseProgram(shaderProgram_1);
-
+			//glUseProgram(shaderProgram_1);
+			shader.use();
+			shader.setVec4("ourColor", Color(sin(g_time), cos(g_time), tan(g_time), sin(g_time)));
+			shader.setInt("aForward", -1);
 			// 绘制三角形
 			glBindVertexArray(VAO);
 			//// 绘制矩形 方案1
 			//glDrawArrays(GL_TRIANGLES, 0, 6);
 			// 绘制矩形 方案2
+
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); glBindVertexArray(0);
 
-			glUseProgram(shaderProgram_2);
+			//glUseProgram(shaderProgram_2);
 
-			int vertexColorLocation = glGetUniformLocation(shaderProgram_2, "ourColor");
-			glUniform4f(vertexColorLocation, sin(g_time), cos(g_time), tan(g_time), sin(g_time));
+			//int vertexColorLocation = glGetUniformLocation(shaderProgram_2, "ourColor");
+			//glUniform4f(vertexColorLocation, sin(g_time), cos(g_time), tan(g_time), sin(g_time));
 
-			glBindVertexArray(VAO_1);
-			glDrawArrays(GL_TRIANGLES, 0, 3);
+			//glBindVertexArray(VAO_1);
+			//glDrawArrays(GL_TRIANGLES, 0, 3);
 			//glBindVertexArray(VAO_2);
 			//glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -264,19 +273,19 @@ void CompileShader(unsigned int& shaderProgram, const char* vertexShaderSource, 
 
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 	glCompileShader(vertexShader);
-	D3DLog::Get().PrintLog(vertexShader, GL_COMPILE_STATUS);
+	Logger::Get().PrintLog(vertexShader, GL_COMPILE_STATUS);
 
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
 	glCompileShader(fragmentShader);
-	D3DLog::Get().PrintLog(fragmentShader, GL_COMPILE_STATUS);
+	Logger::Get().PrintLog(fragmentShader, GL_COMPILE_STATUS);
 
 	// 创建着色器程序，绑定着色器，并完成链接
 	shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, vertexShader);
 	glAttachShader(shaderProgram, fragmentShader);
 	glLinkProgram(shaderProgram);
-	D3DLog::Get().PrintLog(shaderProgram, GL_LINK_STATUS);
+	Logger::Get().PrintLog(shaderProgram, GL_LINK_STATUS);
 
 	glUseProgram(shaderProgram);
 

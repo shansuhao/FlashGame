@@ -1,0 +1,14 @@
+#pragma once
+
+//#include <GL/glew.h>
+#include <GL/glu.h>
+#include <GL/GL.h>
+
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <ctime>
+
+#pragma comment(lib, "opengl32.lib")
+#pragma comment(lib, "glu32.lib")
