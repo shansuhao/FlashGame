@@ -1,19 +1,7 @@
 #include "pch.h"
 
-#include <GL/glew.h>
-#include <GL/GL.h>
-
 #include "Log/Logger.h"
-
-#include <string>
-#include <fstream>
-#include <ostream>
-#include <sstream>
-#include <iostream>
-
 #include "OpenGLShader.h"
-
-#pragma comment(lib, "opengl32.lib")
 
 OpenGLShader::OpenGLShader(const char* vertexPath, const char* fragmentPath)
 {

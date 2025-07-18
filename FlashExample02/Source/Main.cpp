@@ -1,12 +1,9 @@
 #include "FlashExample.h"
 
+#include "OpenGL/OpenGlLibary.h"
+
 #include "Shader/OpenGLShader.h"
 #include "Log/Logger.h"
-
-#include <GL/glew.h>
-#include <GL/GL.h>
-
-#pragma comment(lib, "opengl32.lib")
 
 struct FColor
 {
@@ -165,7 +162,7 @@ int main(int argc, char* argv) {
 
 			//glUseProgram(shaderProgram_1);
 			shader.use();
-			shader.setVec4("ourColor", Color(sin(g_time), cos(g_time), tan(g_time), sin(g_time)));
+			shader.setVec4("ourColor", Color(abs(tan(g_time)), abs(cos(g_time)), abs(sin(g_time)), abs(sin(g_time))));
 			shader.setInt("aForward", -1);
 			// »æÖÆÈý½ÇÐÎ
 			glBindVertexArray(VAO);

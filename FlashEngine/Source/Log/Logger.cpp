@@ -1,8 +1,6 @@
 #include "pch.h"
 
-#include <GL/glew.h>
-#include <iostream>
-#include "Logger.h"
+#include "Logger.h" 
 
 void Logger::PrintLog(unsigned int target, unsigned int type)
 {
