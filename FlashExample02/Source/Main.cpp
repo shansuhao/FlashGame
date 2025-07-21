@@ -5,6 +5,9 @@
 #include "Shader/OpenGLShader.h"
 #include "Log/Logger.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 struct FColor
 {
 	float R, G, B, A = 0;
@@ -44,7 +47,6 @@ float g_time = 0.f;
 
 bool OpenGLInit(__in HWND p_hwnd, __out HDC& p_hdc, __out HGLRC& p_hglrc);
 void UpdateWindow(HWND hwnd, HDC hdc, HGLRC hglrc);
-void Render();
 void RenderTriangle(unsigned int& VBO, unsigned int& VAO, float* vertices, size_t size);
 void CompileShader(unsigned int& shaderProgram, const char* vertexShaderSource, const char* fragmentShaderSource);
 
@@ -92,10 +94,10 @@ int main(int argc, char* argv) {
 		//};
 
 		float vertices[] = {
-			 0.0f,  0.5f, 0.0f,   1.f,0.f,0.f,// 右上角
-			 0.5f, -0.5f, 0.0f,	  0.f,1.f,0.f,// 右下角
-			-0.5f, -0.5f, 0.0f,	  1.f,0.f,0.f,// 左下角
-			-0.5f,  0.5f, 0.0f,   0.f,0.f,1.f,// 左上角
+			 0.0f,  0.5f, 0.0f,   1.f,0.f,0.f, 0.5f, 1.0f,	// 右上角
+			 0.5f, -0.5f, 0.0f,	  0.f,1.f,0.f, 1.0f, 0.0f,	// 右下角
+			-0.5f, -0.5f, 0.0f,	  1.f,0.f,0.f, 0.0f, 0.0f,	// 左下角
+			-0.5f,  0.5f, 0.0f,   0.f,0.f,1.f, 0.0f, 1.0f,	// 左上角
 		};
 
 		unsigned int indices[] = {
@@ -121,11 +123,14 @@ int main(int argc, char* argv) {
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 		// 设置顶点属性指针
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
+
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+		glEnableVertexAttribArray(2);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
@@ -148,12 +153,58 @@ int main(int argc, char* argv) {
 		//RenderTriangle(VBO_2, VAO_2, vertices_2, sizeof(vertices_2));
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		std::cout << "Tick Count:" << GetTickCount() << std::endl;
+
+		//加载图片
+		unsigned int texture1, texture2;
+
+		int img_width, img_height, img_channels;
+		unsigned char* data;
+		char* buffer;
+
+		glGenTextures(1, &texture1);
+		glBindTexture(GL_TEXTURE_2D, texture1);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		buffer = _getcwd(NULL, 0);
+		stbi_set_flip_vertically_on_load(true);
+		data = stbi_load(std::string(buffer).append("\\Asset\\Texture\\Metals.png\0").c_str(), &img_width, &img_height, &img_channels, 0);
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		free(buffer);
+		stbi_image_free(data);
+
+		glGenTextures(1, &texture2);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		buffer = _getcwd(NULL, 0);
+		//stbi_set_flip_vertically_on_load(true);
+		data = stbi_load(std::string(buffer).append("\\Asset\\Texture\\Mario.png\0").c_str(), &img_width, &img_height, &img_channels, 0);
+		if (data)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img_width, img_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		free(buffer);
+		stbi_image_free(data);
+
+		shader.use();
+		shader.setInt("texture1", 0);
+		shader.setInt("texture2", 1);
+
 		DXWindow::Get().SetFullscreen(TRUE);
 		while (!DXWindow::Get().ShouldClose())
 		{
-			//time += (1 / GetTickCount());
-
 			g_time += 0.001;
 			DXWindow::Get().UpdateWindow();
 			UpdateWindow(DXWindow::Get().GetHWND(), hdc, hglrc);
@@ -162,15 +213,24 @@ int main(int argc, char* argv) {
 
 			//glUseProgram(shaderProgram_1);
 			shader.use();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture1);
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, texture2);
+
 			shader.setVec4("ourColor", Color(abs(tan(g_time)), abs(cos(g_time)), abs(sin(g_time)), abs(sin(g_time))));
-			shader.setInt("aForward", -1);
+			shader.setFloat("aScala", DXWindow::Get().GetSceneScala());
+			shader.setInt("aForward", 1);
+
 			// 绘制三角形
 			glBindVertexArray(VAO);
 			//// 绘制矩形 方案1
 			//glDrawArrays(GL_TRIANGLES, 0, 6);
 			// 绘制矩形 方案2
 
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); glBindVertexArray(0);
+			glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(unsigned int), GL_UNSIGNED_INT, 0); 
+			glBindVertexArray(0);
 
 			//glUseProgram(shaderProgram_2);
 
@@ -244,21 +304,6 @@ bool OpenGLInit(__in HWND p_hwnd, __out HDC& p_hdc, __out HGLRC& p_hglrc)
 	// glew 初始化
 	glewInit();
 	return true;
-}
-
-void Render()
-{
-	//******以下内容为1.0版本绘制方法，高版本的不建议这样绘制了，尽量使用glDraw*系列函数以提高性能
-	//设置点
-	//以画线方式绘制
-	glBegin(GL_TRIANGLE_STRIP);
-	//中心端点，为红色
-	glColor3f(1, 0, 0); glVertex2f(-1.0f, -1.0f);
-	//到左上角中点端点，为绿色
-	glColor3f(0, 1, 0); glVertex2f(0.0f, 1.0f);
-	//到上方中点端点，为蓝色
-	glColor3f(0, 0, 1); glVertex2f(1.0f, -1.0f);
-	glEnd();
 }
 
 // 编译顶点着色器与片段着色器(像素着色器)

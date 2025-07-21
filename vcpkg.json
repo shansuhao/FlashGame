@@ -3,7 +3,8 @@
     "glad",
     "glew",
     "glfw3",
+    "glm",
     "opengl",
-    "glm"
+    "stb"
   ]
 }

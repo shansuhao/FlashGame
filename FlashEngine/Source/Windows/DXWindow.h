@@ -25,6 +25,7 @@ public:
 	inline UINT GetWidth() const { return m_Width; }
 	inline UINT GetHeight() const { return m_Height; }
 	inline BOOL GetFullWindow() { return m_FullWindow; }
+	inline FLOAT GetSceneScala() { return ((float)m_Height) / ((float)m_Width); }
 
 private:
 	static LRESULT CALLBACK OnWindowMessage(HWND, UINT, WPARAM, LPARAM);
