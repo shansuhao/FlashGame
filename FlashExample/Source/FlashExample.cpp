@@ -8,6 +8,17 @@ int main(int argc, char* argv) {
 
 	if (DXWindow::Get().Init(WND_CLASS_NAME, WND_CLASS_NAME, IDI_ICON1, WND_WIDTH, WND_HEIGHT) && DXContext::Get().Init())
 	{
+		//float vertexData[] = {
+		//	-0.5f, -0.5f, 0.5f, 1.0f, // position
+		//	 1.0f,  0.0f, 0.0f, 1.0f,
+		//	 0.0f,  0.0f, 0.0f, 0.0f,
+		//	-0.5f, -0.5f, 0.5f, 1.0f, // position
+		//	 0.5f,  0.5f, 0.5f, 1.0f,
+		//	 0.0f,  0.0f, 0.0f, 0.0f,
+		//	-0.5f, -0.5f, 0.5f, 1.0f, // position
+		//	 0.0f,  0.0f, 1.0f, 1.0f,
+		//	 0.0f,  0.0f, 0.0f, 0.0f,
+		//};
 		DXWindow::Get().SetFullscreen(true);
 		while (!DXWindow::Get().ShouldClose())
 		{

@@ -230,7 +230,7 @@ void DXContext::DrawFrame()
 {
 	m_currentBufferIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-	D3D12_RESOURCE_BARRIER barr{};
+ 	D3D12_RESOURCE_BARRIER barr{};
 	barr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	barr.Transition.pResource = m_buffers[m_currentBufferIndex];
@@ -244,6 +244,7 @@ void DXContext::DrawFrame()
 	D3D12_RECT scissorRect = {0,0, DXWindow::Get().GetWidth(), DXWindow::Get().GetHeight()};
 	m_cmdList->RSSetScissorRects(1, &scissorRect);
 	float pColor[] = { m_backGroundColor.R, m_backGroundColor.G,m_backGroundColor.B, m_backGroundColor.A };
+
 	m_cmdList->ClearRenderTargetView(m_rtvHandles[m_currentBufferIndex], pColor, 0, nullptr);
 	m_cmdList->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, NULL);
 }

@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "Log/Logger.h"
+#include "OpenGL/Log/Logger.h"
 #include "OpenGLShader.h"
 
 OpenGLShader::OpenGLShader(const char* vertexPath, const char* fragmentPath)

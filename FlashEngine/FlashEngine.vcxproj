@@ -160,23 +160,25 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Log\Logger.h" />
+    <ClInclude Include="Source\D3D\Shader\D3DShader.h" />
+    <ClInclude Include="Source\OpenGL\Log\Logger.h" />
     <ClInclude Include="Source\OpenGL\OpenGlLibary.h" />
-    <ClInclude Include="Source\Shader\OpenGLShader.h" />
+    <ClInclude Include="Source\OpenGL\Shader\OpenGLShader.h" />
     <ClInclude Include="Source\Utils\ComPointer.h" />
     <ClInclude Include="Source\D3D\DXContext.h" />
-    <ClInclude Include="Source\Debug\DXDebugLayer.h" />
+    <ClInclude Include="Source\D3D\Debug\DXDebugLayer.h" />
     <ClInclude Include="Source\D3D\D3DLibary.h" />
-    <ClInclude Include="Source\framework.h" />
-    <ClInclude Include="Source\pch.h" />
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="Source\Windows\DXWindow.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Log\Logger.cpp" />
-    <ClCompile Include="Source\Shader\OpenGLShader.cpp" />
+    <ClCompile Include="Source\D3D\Shader\D3DShader.cpp" />
+    <ClCompile Include="Source\OpenGL\Log\Logger.cpp" />
+    <ClCompile Include="Source\OpenGL\Shader\OpenGLShader.cpp" />
     <ClCompile Include="Source\D3D\DXContext.cpp" />
-    <ClCompile Include="Source\Debug\DXDebugLayer.cpp" />
-    <ClCompile Include="Source\pch.cpp">
+    <ClCompile Include="Source\D3D\Debug\DXDebugLayer.cpp" />
+    <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

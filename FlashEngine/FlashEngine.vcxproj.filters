@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\framework.h">
+    <ClInclude Include="framework.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Source\pch.h">
+    <ClInclude Include="pch.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Source\D3D\D3DLibary.h">
@@ -30,24 +30,27 @@
     <ClInclude Include="Source\D3D\DXContext.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Debug\DXDebugLayer.h">
+    <ClInclude Include="Source\D3D\Debug\DXDebugLayer.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Source\Utils\ComPointer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Shader\OpenGLShader.h">
+    <ClInclude Include="Source\OpenGL\Shader\OpenGLShader.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Log\Logger.h">
+    <ClInclude Include="Source\OpenGL\Log\Logger.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Source\OpenGL\OpenGlLibary.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\D3D\Shader\D3DShader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\pch.cpp">
+    <ClCompile Include="pch.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\Windows\DXWindow.cpp">
@@ -56,13 +59,16 @@
     <ClCompile Include="Source\D3D\DXContext.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Debug\DXDebugLayer.cpp">
+    <ClCompile Include="Source\D3D\Debug\DXDebugLayer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Shader\OpenGLShader.cpp">
+    <ClCompile Include="Source\OpenGL\Shader\OpenGLShader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Log\Logger.cpp">
+    <ClCompile Include="Source\OpenGL\Log\Logger.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\D3D\Shader\D3DShader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
