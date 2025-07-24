@@ -50,6 +50,20 @@ void DXWindow::UpdateWindow()
 	}
 }
 
+void DXWindow::Resize() {
+	DXContext::Get().ReleaseBuffers();
+	RECT cr{};
+	if (GetClientRect(m_hWnd, &cr))
+	{
+		m_Width = cr.right - cr.left;
+		m_Height = cr.bottom - cr.top;
+
+		DXContext::Get().GetSwapChain()->ResizeBuffers(DXContext::GetFrameCount(), m_Width, m_Height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING);
+		m_ShouldResize = false;
+	}
+	DXContext::Get().GetBuffers();
+}
+
 void DXWindow::Shutdown()
 {
 }
@@ -96,6 +110,12 @@ LRESULT DXWindow::OnWindowMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 {
 	switch (msg)
 	{
+	case WM_SIZE:
+		if (lParam && (HIWORD(lParam) != Get().m_Height || LOWORD(lParam) != Get().m_Width))
+		{
+			Get().m_ShouldResize = true;
+		}
+		break;
 	case WM_CLOSE :
 		Get().m_ShouldClose = true;
 		return 0;

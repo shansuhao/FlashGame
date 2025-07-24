@@ -13,14 +13,17 @@ private:
 	UINT		m_Height = 1080;
 	BOOL		m_ShouldClose = false;
 	BOOL		m_FullWindow = false;
+	BOOL		m_ShouldResize = false;
 public:
 	bool Init(LPCWSTR p_ClassName, LPCWSTR p_WndName, int32_t p_icon, UINT p_width, UINT p_height);
 	void UpdateWindow();
+	void Resize();
 	void Shutdown();
 	void SetFullscreen(bool enabled);
 
 
 	inline bool ShouldClose() const { return m_ShouldClose; }
+	inline BOOL ShouldResize() const { return m_ShouldResize; }
 	inline HWND& GetHWND() { return m_hWnd; }
 	inline UINT GetWidth() const { return m_Width; }
 	inline UINT GetHeight() const { return m_Height; }

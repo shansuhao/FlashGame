@@ -86,19 +86,19 @@ int main(int argc, char* argv) {
 		//};
 
 		// 绘制矩形 方案2
-		//float vertices[] = {
-		//	 0.5f,  0.5f, 0.0f,   1.f,0.f,0.f,// 右上角
-		//	 0.5f, -0.5f, 0.0f,	  0.f,1.f,0.f,// 右下角
-		//	-0.5f, -0.5f, 0.0f,	  1.f,0.f,0.f,// 左下角
-		//	-0.5f,  0.5f, 0.0f,   0.f,0.f,1.f,// 左上角
-		//};
-
 		float vertices[] = {
-			 0.0f,  0.5f, 0.0f,   1.f,0.f,0.f, 0.5f, 1.0f,	// 右上角
-			 0.5f, -0.5f, 0.0f,	  0.f,1.f,0.f, 1.0f, 0.0f,	// 右下角
-			-0.5f, -0.5f, 0.0f,	  1.f,0.f,0.f, 0.0f, 0.0f,	// 左下角
-			-0.5f,  0.5f, 0.0f,   0.f,0.f,1.f, 0.0f, 1.0f,	// 左上角
+			 0.5f,  0.5f, 0.0f,   1.f,0.f,0.f,  1.0f, 1.0f,	// 右上角
+			 0.5f, -0.5f, 0.0f,	  0.f,1.f,0.f,  1.0f, 0.0f,	// 右下角
+			-0.5f, -0.5f, 0.0f,	  1.f,0.f,0.f,	0.0f, 0.0f,	// 左下角
+			-0.5f,  0.5f, 0.0f,   0.f,0.f,1.f,	0.0f, 1.0f,	// 左上角
 		};
+
+		//float vertices[] = {
+		//	 0.0f,  0.5f, 0.0f,   1.f,0.f,0.f, 0.5f, 1.0f,	// 右上角
+		//	 0.5f, -0.5f, 0.0f,	  0.f,1.f,0.f, 1.0f, 0.0f,	// 右下角
+		//	-0.5f, -0.5f, 0.0f,	  1.f,0.f,0.f, 0.0f, 0.0f,	// 左下角
+		//	-0.5f,  0.5f, 0.0f,   0.f,0.f,1.f, 0.0f, 1.0f,	// 左上角
+		//};
 
 		unsigned int indices[] = {
 			// 注意索引从0开始! 
@@ -106,7 +106,7 @@ int main(int argc, char* argv) {
 			// 这样可以由下标代表顶点组合成矩形
 
 			0, 1, 2, // 第一个三角形
-			//1, 2, 3  // 第二个三角形
+			0, 2, 3  // 第二个三角形
 		};
 
 		unsigned int VBO, VAO, EBO;
@@ -154,6 +154,7 @@ int main(int argc, char* argv) {
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+		float mixValue = 0.f;
 		//加载图片
 		unsigned int texture1, texture2;
 
@@ -164,14 +165,14 @@ int main(int argc, char* argv) {
 		glGenTextures(1, &texture1);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 		buffer = _getcwd(NULL, 0);
 		stbi_set_flip_vertically_on_load(true);
-		data = stbi_load(std::string(buffer).append("\\Asset\\Texture\\Metals.png\0").c_str(), &img_width, &img_height, &img_channels, 0);
+		data = stbi_load(std::string(buffer).append("\\Asset\\Texture\\WindowsShutters025.jpg\0").c_str(), &img_width, &img_height, &img_channels, 0);
 		if (data)
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -199,15 +200,23 @@ int main(int argc, char* argv) {
 		stbi_image_free(data);
 
 		shader.use();
-		shader.setInt("texture1", 0);
+		//shader.setInt("texture1", 0);
+		glUniform1i(glGetUniformLocation(shader.ID, "texture1"), 0);
 		shader.setInt("texture2", 1);
 
 		DXWindow::Get().SetFullscreen(TRUE);
+
+		int forward = 1;
 		while (!DXWindow::Get().ShouldClose())
 		{
 			g_time += 0.001;
 			DXWindow::Get().UpdateWindow();
 			UpdateWindow(DXWindow::Get().GetHWND(), hdc, hglrc);
+			mixValue += (0.001) * forward;
+			if (mixValue > 1.0 || mixValue < 0.0)
+			{
+				forward *= -1;
+			}
 
 			//Render();
 
@@ -222,6 +231,7 @@ int main(int argc, char* argv) {
 			shader.setVec4("ourColor", Color(abs(tan(g_time)), abs(cos(g_time)), abs(sin(g_time)), abs(sin(g_time))));
 			shader.setFloat("aScala", DXWindow::Get().GetSceneScala());
 			shader.setInt("aForward", 1);
+			shader.setFloat("mixValue", mixValue);
 
 			// 绘制三角形
 			glBindVertexArray(VAO);
