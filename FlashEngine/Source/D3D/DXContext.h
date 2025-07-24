@@ -42,6 +42,7 @@ public:
 		return FrameCount;
 	}
 
+	inline ComPointer<ID3D12Device10>& GetDevice() { return m_d3dDevice; }
 	inline ComPointer<ID3D12CommandQueue>& GetCmdQueue() { return m_cmdQueue; }
 	inline ComPointer<IDXGIFactory7>& GetFactory() { return m_dxgiFactory; }
 	inline ComPointer<IDXGISwapChain3>& GetSwapChain() { return m_swapChain; }
