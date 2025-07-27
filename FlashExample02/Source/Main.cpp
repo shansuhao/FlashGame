@@ -1,9 +1,8 @@
 #include "FlashExample.h"
 
 #include "OpenGL/OpenGlLibary.h"
-
-#include "Shader/OpenGLShader.h"
-#include "Log/Logger.h"
+#include "OpenGL/Shader/OpenGLShader.h"
+#include "OpenGL/Log/Logger.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

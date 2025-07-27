@@ -21,12 +21,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Image", "Image", "{278691EC
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shaders", "Shaders", "{AA49A873-5BDB-4CB5-8A6D-B137EA5D186B}"
+	ProjectSection(SolutionItems) = preProject
+		Shaders\VertexShader.hlsl = Shaders\VertexShader.hlsl
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ThirdParty", "ThirdParty", "{791C1F5B-4A8B-4A5B-A4C5-3346675E42FF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FlashEngine", "FlashEngine\FlashEngine.vcxproj", "{AF7834A2-C1D8-4FA2-88FA-645223C57F48}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FlashExample02", "FlashExample02\FlashExample02.vcxproj", "{39867E15-A2FC-411F-A1CF-659DA86684C6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BEADDD68-A5BD-4CC2-AF06-DB038FCA91C0}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE.txt = LICENSE.txt
+		Readme.md = Readme.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

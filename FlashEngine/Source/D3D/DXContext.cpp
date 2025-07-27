@@ -95,7 +95,7 @@ void DXContext::ReleaseBuffers()
 void DXContext::InitCommandList()
 {
 	m_cmdAllocator->Reset();
-	m_cmdList->Reset(m_cmdAllocator.Get(), NULL);
+	m_cmdList->Reset(m_cmdAllocator, NULL);
 }
 
 void DXContext::ExeuteCommandList()
@@ -137,7 +137,7 @@ bool DXContext::CreateDepthSource()
 	// 设置交换链 深度缓冲区
 	D3D12_HEAP_PROPERTIES d3d_heap_properties = {};
 	d3d_heap_properties.Type = D3D12_HEAP_TYPE_DEFAULT;
-
+	
 	D3D12_RESOURCE_DESC d3d12_Resource_desc{};
 	d3d12_Resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	d3d12_Resource_desc.Alignment = 0;
@@ -164,8 +164,8 @@ bool DXContext::CreateDepthSource()
 void DXContext::CreateRTVHeap()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc{};
-	rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	rtvHeapDesc.NodeMask = 0;
+	//rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	//rtvHeapDesc.NodeMask = 0;
 	rtvHeapDesc.NumDescriptors = FrameCount;
 	rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 
@@ -183,11 +183,16 @@ void DXContext::CreateRTVHeap()
 void DXContext::CreateDSVHeap()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
-	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	//dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvHeapDesc.NumDescriptors = 1;
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 
 	m_d3dDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvDescHeap));
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC d3d_ds_view_desc{};
+	d3d_ds_view_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3d_ds_view_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	m_d3dDevice->CreateDepthStencilView(m_d3d_ds_resoucre, &d3d_ds_view_desc, m_dsvDescHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
 bool DXContext::GetBuffers()
@@ -199,14 +204,9 @@ bool DXContext::GetBuffers()
 		D3D12_RENDER_TARGET_VIEW_DESC rtv{};
 		rtv.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		rtv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-		m_d3dDevice->CreateRenderTargetView(m_buffers[i], &rtv, m_rtvHandles[i]);
+		//m_d3dDevice->CreateRenderTargetView(m_buffers[i], &rtv, m_rtvHandles[i]);
+		m_d3dDevice->CreateRenderTargetView(m_buffers[i], NULL, m_rtvHandles[i]);
 	}
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC d3d_ds_view_desc{};
-	d3d_ds_view_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	d3d_ds_view_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	m_d3dDevice->CreateDepthStencilView(m_d3d_ds_resoucre.Get(), &d3d_ds_view_desc, m_dsvDescHeap->GetCPUDescriptorHandleForHeapStart());
-
 	return true;
 }
 
@@ -238,6 +238,7 @@ void DXContext::DrawFrame()
 	barr.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 	barr.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	m_cmdList->ResourceBarrier(1, &barr);
+	m_cmdList->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, NULL);
 
 	D3D12_VIEWPORT viewport = { 0,0, DXWindow::Get().GetWidth(), DXWindow::Get().GetHeight() };
 	m_cmdList->RSSetViewports(1, &viewport);
@@ -246,7 +247,10 @@ void DXContext::DrawFrame()
 	float pColor[] = { m_backGroundColor.R, m_backGroundColor.G,m_backGroundColor.B, m_backGroundColor.A };
 
 	m_cmdList->ClearRenderTargetView(m_rtvHandles[m_currentBufferIndex], pColor, 0, nullptr);
-	m_cmdList->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, NULL);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE dsv;
+	dsv.ptr = m_dsvDescHeap->GetCPUDescriptorHandleForHeapStart().ptr;
+	m_cmdList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 }
 
 void DXContext::EndFrame()

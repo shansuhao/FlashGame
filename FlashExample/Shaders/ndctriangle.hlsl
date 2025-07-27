@@ -1,7 +1,7 @@
 struct VertexData
 {
-    float4 position : POSITIONT;
-    float4 texcoord : TEXCOORD;
+    float4 position : POSITION;
+    float4 texcoord : TEXCOORD0;
     float4 normal : NORMAL;
 };
 

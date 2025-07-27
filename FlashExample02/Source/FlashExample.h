@@ -1,7 +1,7 @@
 #pragma once
 #pragma once
 #include "Windows/DXWindow.h"
-#include "Debug/DXDebugLayer.h"
+#include "D3D/Debug/DXDebugLayer.h"
 #include "D3D/DXContext.h"
 #include "resource.h"
 
