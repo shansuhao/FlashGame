@@ -1,5 +1,6 @@
 #include "FlashExample.h"
 #include "D3D/Shader/D3DShader.h"
+#include "D3D/Mesh/StaticMeshComponent.h"
 
 int main(int argc, char* argv) {
 
@@ -9,39 +10,50 @@ int main(int argc, char* argv) {
 
 	if (DXWindow::Get().Init(WND_CLASS_NAME, WND_CLASS_NAME, IDI_ICON1, WND_WIDTH, WND_HEIGHT) && DXContext::Get().Init())
 	{
-		float vertexData[] = {
-			-1.0f, -1.0f, 0.5f, 1.0f, // position
-			 1.0f,  0.0f, 0.0f, 1.0f,
-			 0.0f,  0.0f, 0.0f, 0.0f,
-			 0.0f,  1.0f, 0.5f, 1.0f, // position
-			 0.0f,  1.0f, 0.0f, 1.0f,
-			 0.0f,  0.0f, 0.0f, 0.0f,
-			 1.0f, -1.0f, 0.5f, 1.0f, // position
-			 0.0f,  0.0f, 1.0f, 1.0f,
-			 0.0f,  0.0f, 0.0f, 0.0f,
-		};
+		StaticMeshComponent staticMesh;
+		staticMesh.SetVertexCount(3);
+		staticMesh.SetVertexPosition(0, Vector4d(-1.0f, -1.0f, 0.5f, 1.0f));
+		staticMesh.SetVertexTexcoord(0, Vector4d(1.0f, 0.0f, 0.0f, 1.0f));
+		staticMesh.SetVertexNomal(0, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
+		staticMesh.SetVertexTangent(0, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
 
-		D3DShader temp{ sizeof(vertexData), vertexData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER };
+		staticMesh.SetVertexPosition(1, Vector4d(0.0f, 1.0f, 0.5f, 1.0f));
+		staticMesh.SetVertexTexcoord(1, Vector4d(0.0f, 1.0f, 0.0f, 1.0f));
+		staticMesh.SetVertexNomal(1, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
+		staticMesh.SetVertexTangent(1, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
+
+		staticMesh.SetVertexPosition(2, Vector4d(1.0f, -1.0f, 0.5f, 1.0f));
+		staticMesh.SetVertexTexcoord(2, Vector4d(0.0f, 0.0f, 1.0f, 1.0f));
+		staticMesh.SetVertexNomal(2, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
+		staticMesh.SetVertexTangent(2, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
+
 		D3D12_SHADER_BYTECODE t_vs = {};
 		D3D12_SHADER_BYTECODE t_ps = {};
-		temp.CreateShaderFromFile(L"Shaders/ndctriangle.hlsl", "MainVS", "vs_5_0", &t_vs);
-		temp.CreateShaderFromFile(L"Shaders/ndctriangle.hlsl", "MainPS", "ps_5_0", &t_ps);
-		BOOL p_IsInitShader_Success = temp.InitShader(t_vs, t_ps);
 
-		// 创建VBO
-		D3D12_VERTEX_BUFFER_VIEW vboBufferView = {};
-		vboBufferView.BufferLocation = temp.GetVBO().Get()->GetGPUVirtualAddress();
-		vboBufferView.SizeInBytes = sizeof(vertexData);
-		vboBufferView.StrideInBytes = sizeof(float) * 12;
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/ndctriangle.hlsl", "MainVS", "vs_5_0", &t_vs);
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/ndctriangle.hlsl", "MainPS", "ps_5_0", &t_ps);
+
+		ComPointer<ID3D12PipelineState> m_PipeState;
+		ComPointer<ID3D12RootSignature> m_RootSignature;
+
+		int BufferSize = sizeof(StaticMeshComponentVertexData) * staticMesh.m_VertexCount;
+
+		BOOL p_IsInitShader_Success = false;
+		p_IsInitShader_Success = D3DShader::Get().InitShader(
+			m_RootSignature, staticMesh.m_VBO, 
+			BufferSize, staticMesh.m_VertexData,
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+			m_PipeState, t_vs, t_ps);
+		staticMesh.CreateVBOView();
+
 		D3D12_VERTEX_BUFFER_VIEW vbos[] = {
-			vboBufferView
+			staticMesh.m_VBOView
 		};
 
 		DXWindow::Get().SetFullscreen(true);
 		while (!DXWindow::Get().ShouldClose())
 		{
 			DXWindow::Get().UpdateWindow();
-
 			if (DXWindow::Get().ShouldResize())
 			{
 				DXContext::Get().Flush();
@@ -54,8 +66,8 @@ int main(int argc, char* argv) {
 			// 渲染三角形
 			if (p_IsInitShader_Success)
 			{
-				DXContext::Get().GetCommandList()->SetPipelineState(temp.GetPSO());
-				DXContext::Get().GetCommandList()->SetGraphicsRootSignature(temp.GetRootSignature());
+				DXContext::Get().GetCommandList()->SetPipelineState(m_PipeState);
+				DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
 				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
 				DXContext::Get().GetCommandList()->DrawInstanced(3, 1, 0, 0);

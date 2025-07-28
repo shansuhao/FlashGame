@@ -160,6 +160,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\D3D\Mesh\StaticMeshComponent.h" />
     <ClInclude Include="Source\D3D\Shader\D3DShader.h" />
     <ClInclude Include="Source\OpenGL\Log\Logger.h" />
     <ClInclude Include="Source\OpenGL\OpenGlLibary.h" />
@@ -173,6 +174,7 @@
     <ClInclude Include="Source\Windows\DXWindow.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\D3D\Mesh\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\D3D\Shader\D3DShader.cpp" />
     <ClCompile Include="Source\OpenGL\Log\Logger.cpp" />
     <ClCompile Include="Source\OpenGL\Shader\OpenGLShader.cpp" />

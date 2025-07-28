@@ -48,6 +48,9 @@
     <ClInclude Include="Source\D3D\Shader\D3DShader.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\D3D\Mesh\StaticMeshComponent.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -69,6 +72,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\D3D\Shader\D3DShader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\D3D\Mesh\StaticMeshComponent.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

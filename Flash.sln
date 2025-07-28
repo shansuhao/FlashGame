@@ -21,9 +21,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Image", "Image", "{278691EC
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shaders", "Shaders", "{AA49A873-5BDB-4CB5-8A6D-B137EA5D186B}"
-	ProjectSection(SolutionItems) = preProject
-		Shaders\VertexShader.hlsl = Shaders\VertexShader.hlsl
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ThirdParty", "ThirdParty", "{791C1F5B-4A8B-4A5B-A4C5-3346675E42FF}"
 EndProject
