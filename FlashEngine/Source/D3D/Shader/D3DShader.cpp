@@ -3,6 +3,10 @@
 #include "D3D/DXContext.h"
 #include "Windows/DXWindow.h"
 
+#include <filesystem>
+#include <fstream>
+#include <cstdlib>
+
 // 参数设置结合宏定义处理
 bool D3DShader::CreatePSO(ComPointer<ID3D12Resource>& p_VBO, ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12PipelineState>& p_PipeState,D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps)
 {
@@ -139,6 +143,85 @@ bool D3DShader::CreateBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_Data
 	return true;
 }
 
+bool D3DShader::CreateConstantBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_DataLen)
+{
+	D3D12_HEAP_PROPERTIES HeapProperties{};
+	HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	D3D12_RESOURCE_DESC d3d12_Resource_desc{};
+	d3d12_Resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	d3d12_Resource_desc.Alignment = 0;
+	d3d12_Resource_desc.Width = p_DataLen;
+	d3d12_Resource_desc.Height = 1;
+	d3d12_Resource_desc.DepthOrArraySize = 1;
+	d3d12_Resource_desc.MipLevels = 1;
+	d3d12_Resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+	d3d12_Resource_desc.SampleDesc.Count = 1;
+	d3d12_Resource_desc.SampleDesc.Quality = 0;
+	d3d12_Resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	d3d12_Resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	__VERIFY_EXPR(DXContext::Get().GetDevice()->CreateCommittedResource(
+		&HeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&d3d12_Resource_desc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		NULL,
+		IID_PPV_ARGS(&p_VBO)
+	));
+
+	d3d12_Resource_desc = p_VBO->GetDesc();
+	UINT64 memorySizeUsed = 0;
+	UINT64 rowSizeInBytes = 0;
+	UINT rowUsed = 0;
+
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT subFootprint;
+	DXContext::Get().GetDevice()->GetCopyableFootprints(&d3d12_Resource_desc, 0, 1, 0, &subFootprint, &rowUsed, &rowSizeInBytes, &memorySizeUsed);
+	// 3 x 4 x 4 = 48bytes,32bytes,24bytes + 24bytes
+	ComPointer<ID3D12Resource> tempBufferObject;
+	HeapProperties = {};
+	HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	__VERIFY_EXPR(DXContext::Get().GetDevice()->CreateCommittedResource(
+		&HeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&d3d12_Resource_desc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		NULL,
+		IID_PPV_ARGS(&tempBufferObject)
+	));
+
+	//BYTE* pData;
+	//D3D12_RANGE uploadRange;
+	//uploadRange.Begin = 0;
+	//uploadRange.End = p_DataLen;
+	//tempBufferObject->Map(0, NULL, reinterpret_cast<void**>(&pData));
+	//BYTE* pDstTempBuffer = reinterpret_cast<BYTE*>(pData + subFootprint.Offset);
+	//const BYTE* pSrcData = reinterpret_cast<BYTE*>(m_Data);
+	//for (size_t i = 0; i < rowUsed; i++)
+	//{
+	//	memcpy(pDstTempBuffer + subFootprint.Footprint.RowPitch * i, pSrcData + rowSizeInBytes * i, rowSizeInBytes);
+	//}
+	//tempBufferObject->Unmap(0, NULL);
+	//DXContext::Get().InitCommandList();
+	//DXContext::Get().GetCommandList()->CopyBufferRegion(p_VBO, 0, tempBufferObject, 0, subFootprint.Footprint.Width);
+	//D3D12_RESOURCE_BARRIER barrier{};
+	//barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	//barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	//barrier.Transition.pResource = p_VBO;
+	//barrier.Transition.Subresource = 0;
+	//barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	//barrier.Transition.StateAfter = p_StateAfter;
+	//DXContext::Get().GetCommandList()->ResourceBarrier(1, &barrier);
+	//DXContext::Get().ExeuteCommandList();
+
+	return true;
+}
+
+void D3DShader::UpdateConstantBuffer(ComPointer<ID3D12Resource>& p_VBO, void* p_Data, int p_DataLen)
+{
+
+}
+
 void CreateShaderFromFile(
 	LPCTSTR inShaderFilePath,
 	const char* inMainFunctionName,
@@ -174,9 +257,51 @@ void D3DShader::CreateShaderFromFile(LPCTSTR p_ShaderFilePath, const char* p_Mai
 	p_Shader->BytecodeLength = shaderBuffer->GetBufferSize();
 }
 
+void D3DShader::InitShaderFile(LPCTSTR p_ShaderFilePath, D3D12_SHADER_BYTECODE* p_Shader)
+{
+	static std::filesystem::path shaderDir;
+
+	if (shaderDir.empty())
+	{
+		char moduleFileName[MAX_PATH];
+		GetModuleFileNameA(NULL, moduleFileName, MAX_PATH);
+
+		shaderDir = moduleFileName;
+		shaderDir.remove_filename();
+	}
+	std::filesystem::path shaderFullFile = shaderDir / L"Shader" / p_ShaderFilePath;
+	//shaderDir = shaderDir.append(L"/Shader");
+	//shaderDir = shaderDir.append(p_ShaderFilePath);
+	LPCTSTR ShaderFullPath = shaderFullFile.c_str();
+	
+	ID3DBlob* shaderBuffer = nullptr;
+	HRESULT hResult = D3DReadFileToBlob(ShaderFullPath, &shaderBuffer);
+	if (FAILED(hResult))
+	{
+		return;
+	}
+	p_Shader->pShaderBytecode = shaderBuffer->GetBufferPointer();
+	p_Shader->BytecodeLength = shaderBuffer->GetBufferSize();
+}
+
 bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignature)
 {
-	D3D12_ROOT_SIGNATURE_DESC rsDesc = {}; 
+	D3D12_ROOT_PARAMETER rootParameter[2] = {};
+	rootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+	rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParameter[0].Constants.RegisterSpace = 0;
+	rootParameter[0].Constants.ShaderRegister = 0;
+	rootParameter[0].Constants.Num32BitValues = 4;
+
+	rootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParameter[1].Constants.RegisterSpace = 0;
+	rootParameter[1].Constants.ShaderRegister = 1;
+
+
+	D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
+	rsDesc.NumParameters = _countof(rootParameter);
+	rsDesc.pParameters = rootParameter;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	ID3DBlob* signature;
@@ -187,8 +312,27 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	return true;
 }
 
-BOOL D3DShader::InitShader(ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12Resource>& p_VBO, int p_DataLen, void* p_Data, D3D12_RESOURCE_STATES p_StateAfter, ComPointer<ID3D12PipelineState>& p_PipeState, D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps) {
-	if (!InitRootSignature(p_RootSignature)) return false;
+bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignature, D3D12_SHADER_BYTECODE p_RS)
+{
+	//ID3DBlob* signature;
+	//HRESULT hResult = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, NULL);
+	//__VERIFY_EXPR(hResult);
+	HRESULT hResult = DXContext::Get().GetDevice()->CreateRootSignature(0, p_RS.pShaderBytecode, p_RS.BytecodeLength, IID_PPV_ARGS(&p_RootSignature));
+
+	__VERIFY_EXPR(hResult);
+	return true;
+}
+
+BOOL D3DShader::InitShader(ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12Resource>& p_VBO, int p_DataLen, void* p_Data, D3D12_RESOURCE_STATES p_StateAfter, ComPointer<ID3D12PipelineState>& p_PipeState, D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps, BOOL isFromRootSignatureFile, D3D12_SHADER_BYTECODE p_RS) {
+	if (isFromRootSignatureFile)
+	{
+		if (!InitRootSignature(p_RootSignature, p_RS)) return false;
+	}
+	else
+	{
+		if (!InitRootSignature(p_RootSignature)) return false;
+	}
+	
 	if (!CreateBufferOBject(p_VBO, p_DataLen, p_Data, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)) return false;
 	if (!CreatePSO(p_VBO, p_RootSignature, p_PipeState, p_vs, p_ps)) return false;
 	return true;

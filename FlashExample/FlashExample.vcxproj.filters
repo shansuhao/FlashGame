@@ -37,10 +37,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="FlashExample.aps" />
+    <None Include="Shaders\Pipeline.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="FlashExample.rc">
       <Filter>资源文件</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\RootSignature.hlsl" />
+    <FxCompile Include="Shaders\PixelShader.hlsl" />
+    <FxCompile Include="Shaders\VertexShader.hlsl" />
   </ItemGroup>
 </Project>
