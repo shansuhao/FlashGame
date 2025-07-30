@@ -8,7 +8,7 @@
 #include <cstdlib>
 
 // 参数设置结合宏定义处理
-bool D3DShader::CreatePSO(ComPointer<ID3D12Resource>& p_VBO, ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12PipelineState>& p_PipeState,D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps)
+bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12PipelineState>& p_PipeState,D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps)
 {
 	D3D12_INPUT_ELEMENT_DESC vertexElementDesc[] = {
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, sizeof(float) * 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
@@ -129,15 +129,6 @@ bool D3DShader::CreateBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_Data
 
 	DXContext::Get().InitCommandList();
 	DXContext::Get().GetCommandList()->CopyBufferRegion(p_VBO, 0, tempBufferObject, 0, subFootprint.Footprint.Width);
-
-	D3D12_RESOURCE_BARRIER barrier{};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = p_VBO;
-	barrier.Transition.Subresource = 0;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.StateAfter = p_StateAfter;
-	DXContext::Get().GetCommandList()->ResourceBarrier(1, &barrier);
 	DXContext::Get().ExeuteCommandList();
 
 	return true;
@@ -165,68 +156,28 @@ bool D3DShader::CreateConstantBufferOBject(ComPointer<ID3D12Resource>& p_VBO, in
 		&HeapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&d3d12_Resource_desc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
 		NULL,
 		IID_PPV_ARGS(&p_VBO)
 	));
-
-	d3d12_Resource_desc = p_VBO->GetDesc();
-	UINT64 memorySizeUsed = 0;
-	UINT64 rowSizeInBytes = 0;
-	UINT rowUsed = 0;
-
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT subFootprint;
-	DXContext::Get().GetDevice()->GetCopyableFootprints(&d3d12_Resource_desc, 0, 1, 0, &subFootprint, &rowUsed, &rowSizeInBytes, &memorySizeUsed);
-	// 3 x 4 x 4 = 48bytes,32bytes,24bytes + 24bytes
-	ComPointer<ID3D12Resource> tempBufferObject;
-	HeapProperties = {};
-	HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-	__VERIFY_EXPR(DXContext::Get().GetDevice()->CreateCommittedResource(
-		&HeapProperties,
-		D3D12_HEAP_FLAG_NONE,
-		&d3d12_Resource_desc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		NULL,
-		IID_PPV_ARGS(&tempBufferObject)
-	));
-
-	//BYTE* pData;
-	//D3D12_RANGE uploadRange;
-	//uploadRange.Begin = 0;
-	//uploadRange.End = p_DataLen;
-	//tempBufferObject->Map(0, NULL, reinterpret_cast<void**>(&pData));
-	//BYTE* pDstTempBuffer = reinterpret_cast<BYTE*>(pData + subFootprint.Offset);
-	//const BYTE* pSrcData = reinterpret_cast<BYTE*>(m_Data);
-	//for (size_t i = 0; i < rowUsed; i++)
-	//{
-	//	memcpy(pDstTempBuffer + subFootprint.Footprint.RowPitch * i, pSrcData + rowSizeInBytes * i, rowSizeInBytes);
-	//}
-	//tempBufferObject->Unmap(0, NULL);
-	//DXContext::Get().InitCommandList();
-	//DXContext::Get().GetCommandList()->CopyBufferRegion(p_VBO, 0, tempBufferObject, 0, subFootprint.Footprint.Width);
-	//D3D12_RESOURCE_BARRIER barrier{};
-	//barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	//barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	//barrier.Transition.pResource = p_VBO;
-	//barrier.Transition.Subresource = 0;
-	//barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	//barrier.Transition.StateAfter = p_StateAfter;
-	//DXContext::Get().GetCommandList()->ResourceBarrier(1, &barrier);
-	//DXContext::Get().ExeuteCommandList();
-
 	return true;
 }
 
 void D3DShader::UpdateConstantBuffer(ComPointer<ID3D12Resource>& p_VBO, void* p_Data, int p_DataLen)
 {
-
+	D3D12_RANGE uploadRange = {0};
+	unsigned char* pBUffer = nullptr;
+	p_VBO->Map(0, &uploadRange, (void**)(&pBUffer));
+	memcpy(pBUffer, p_Data, p_DataLen);
+	p_VBO->Unmap(0, NULL);
 }
 
 void CreateShaderFromFile(
 	LPCTSTR inShaderFilePath,
 	const char* inMainFunctionName,
 	const char* inTarget,//"vs_5_0","ps_5_0","vs_4_0"
-	D3D12_SHADER_BYTECODE* inShader) {
+	D3D12_SHADER_BYTECODE* inShader)
+{
 	ID3DBlob* shaderBuffer = nullptr;
 	ID3DBlob* errorBuffer = nullptr;
 	HRESULT hResult = D3DCompileFromFile(inShaderFilePath, nullptr, nullptr,
@@ -298,7 +249,6 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	rootParameter[1].Constants.RegisterSpace = 0;
 	rootParameter[1].Constants.ShaderRegister = 1;
 
-
 	D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
 	rsDesc.NumParameters = _countof(rootParameter);
 	rsDesc.pParameters = rootParameter;
@@ -323,7 +273,16 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	return true;
 }
 
-BOOL D3DShader::InitShader(ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12Resource>& p_VBO, int p_DataLen, void* p_Data, D3D12_RESOURCE_STATES p_StateAfter, ComPointer<ID3D12PipelineState>& p_PipeState, D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps, BOOL isFromRootSignatureFile, D3D12_SHADER_BYTECODE p_RS) {
+BOOL D3DShader::InitShader(
+	StaticMeshComponent& p_staticMeshComponent,
+	ComPointer<ID3D12RootSignature>& p_RootSignature,
+	D3D12_RESOURCE_STATES p_StateAfter, 
+	ComPointer<ID3D12PipelineState>& p_PipeState,
+	D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps,
+	BOOL isFromRootSignatureFile, D3D12_SHADER_BYTECODE p_RS)
+{
+
+	// 初始化根签名
 	if (isFromRootSignatureFile)
 	{
 		if (!InitRootSignature(p_RootSignature, p_RS)) return false;
@@ -332,8 +291,46 @@ BOOL D3DShader::InitShader(ComPointer<ID3D12RootSignature>& p_RootSignature, Com
 	{
 		if (!InitRootSignature(p_RootSignature)) return false;
 	}
+	if (!CreatePSO(p_RootSignature, p_PipeState, p_vs, p_ps)) return false;
+
+	if (!CreateConstantBufferOBject(p_staticMeshComponent.m_CB, 65536)) return false;
+	DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
+		(45.0f * 3.1415926f) / 180.0f, 
+		((float)DXWindow::Get().GetWidth()/ (float)DXWindow::Get().GetHeight()),
+		0.1f, 1000.0f
+	);
+	DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixIdentity();
+	DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f,0.0f,2.0f);
+	DirectX::XMFLOAT4X4 tempMatrix;
+
+	float matrix[48];
+	//{
+	//	1.0f,0.f,0.f,0.f,
+	//	0.f,1.f,0.f,0.f,
+	//	0.f,0.f,1.f,0.f,
+	//	0.f,0.f,0.f,1.f
+	//};
+	DirectX::XMStoreFloat4x4(&tempMatrix, projectionMatrix);
+	memcpy(matrix, &tempMatrix, sizeof(float) * 16);
+	DirectX::XMStoreFloat4x4(&tempMatrix, viewMatrix);
+	memcpy(matrix + 16, &tempMatrix, sizeof(float) * 16);
+	DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
+	memcpy(matrix + 32, &tempMatrix, sizeof(float) * 16);
+
+	UpdateConstantBuffer(p_staticMeshComponent.m_CB, matrix, sizeof(float) * 48);
+
+	// 创建 vbo
+	int p_DataLen = sizeof(StaticMeshComponentVertexData) * p_staticMeshComponent.m_VertexCount;
+	if (!CreateBufferOBject(p_staticMeshComponent.m_VBO, p_DataLen, p_staticMeshComponent.m_VertexData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)) return false;
 	
-	if (!CreateBufferOBject(p_VBO, p_DataLen, p_Data, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)) return false;
-	if (!CreatePSO(p_VBO, p_RootSignature, p_PipeState, p_vs, p_ps)) return false;
+	D3D12_RESOURCE_BARRIER barrier{};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = p_staticMeshComponent.m_VBO;
+	barrier.Transition.Subresource = 0;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+	barrier.Transition.StateAfter = p_StateAfter;
+	DXContext::Get().GetCommandList()->ResourceBarrier(1, &barrier);
+
 	return true;
 }

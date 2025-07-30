@@ -61,9 +61,11 @@ struct StaticMeshComponentVertexData {
 class StaticMeshComponent {
 public:
 	StaticMeshComponent() = default;
+
 public:
 	int m_VertexCount;
 	ComPointer<ID3D12Resource> m_VBO;
+	ComPointer<ID3D12Resource> m_CB;
 	D3D12_VERTEX_BUFFER_VIEW m_VBOView;
 	StaticMeshComponentVertexData* m_VertexData;
 
