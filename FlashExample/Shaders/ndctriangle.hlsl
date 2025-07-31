@@ -46,7 +46,10 @@ float4 MainPS(VSOut inPsInput) : SV_Target
     theta += 0.5f; //0.0~1.0
     float ambientColorIntensity = 0.6;
     float3 ambientColor = lerp(bottomColor, topColor, theta) * ambientColorIntensity;
-    float3 diffuseColor = float3(0.0, 0.0, 0.0);
+    float3 L = normalize(float3(1.0f,1.0f,-1.0f));
+    float diffuseIntensity = max(0.0f, dot(N, L));
+    float3 diffuserLightColor = float3(0.1f, 0.4f, 0.6f);
+    float3 diffuseColor = diffuserLightColor * diffuseIntensity;
     float3 specularColor = float3(0.0, 0.0, 0.0);
     float3 surfaceColor = ambientColor + diffuseColor + specularColor;
     return float4(surfaceColor, 1.0f);
