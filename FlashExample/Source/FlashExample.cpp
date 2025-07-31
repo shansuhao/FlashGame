@@ -81,14 +81,6 @@ int main(int argc, char* argv) {
 				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 				staticMesh.Render();
-
-				DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
-				for (auto iter = staticMesh.m_SubMeshes.begin(); iter != staticMesh.m_SubMeshes.end(); iter++)
-				{
-					DXContext::Get().GetCommandList()->IASetIndexBuffer(&iter->second->m_IBView);
-					DXContext::Get().GetCommandList()->DrawIndexedInstanced(iter->second->m_IndexCount, 1, 0, 0, 0);
-				}
-				//DXContext::Get().GetCommandList()->DrawInstanced(3, 1, 0, 0);
 			}
 
 			DXContext::Get().EndFrame();
