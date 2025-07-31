@@ -32,11 +32,16 @@ VSOut MainVS(VertexData inVertexData)
     float4 positionWS = mul(ModelMatrix, inVertexData.position);
     float4 positionVS = mul(ViewMatrix, positionWS);
     vo.position = mul(ProjectionMatrix, positionVS);
-    vo.color = inVertexData.texcoord + color;
+    vo.color = float4(inVertexData.normal.xyz, 1.0f);
     return vo;
 }
 
 float4 MainPS(VSOut inPsInput) : SV_Target
 {
-    return inPsInput.color;
+    float3 ambientColor = float3(0.1,0.1,0.1);
+    float3 diffuseColor = float3(0.0, 0.0, 0.0);
+    float3 specularColor = float3(0.0, 0.0, 0.0);
+    float3 surfaceColor = ambientColor + diffuseColor + specularColor;
+    return float4(surfaceColor, 1.0f);
+    // return inPsInput.color;
 }
