@@ -43,7 +43,6 @@ int main(int argc, char* argv) {
 		DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixIdentity();
 		DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 10.f);
 		DirectX::XMFLOAT4X4 tempMatrix;
-
 		float matrix[48];
 		DirectX::XMStoreFloat4x4(&tempMatrix, projectionMatrix);
 		memcpy(matrix, &tempMatrix, sizeof(float) * 16);
@@ -52,11 +51,10 @@ int main(int argc, char* argv) {
 		DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
 		memcpy(matrix + 32, &tempMatrix, sizeof(float) * 16);
 		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 48);
+
+
 		DXContext::Get().ExeuteCommandList();
 		
-		D3D12_VERTEX_BUFFER_VIEW vbos[] = {
-			staticMesh.m_VBOView
-		};
 
 		float color[] = {0.5f, 0.5f, 0.5f, 1.f};
 
@@ -81,8 +79,11 @@ int main(int argc, char* argv) {
 				DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 4, color, 0);
 				DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh.m_CB->GetGPUVirtualAddress());
 				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+				staticMesh.Render();
+
 				DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
-				for (auto iter = staticMesh.m_SubMeshes.begin(); iter!= staticMesh.m_SubMeshes.end(); iter++)
+				for (auto iter = staticMesh.m_SubMeshes.begin(); iter != staticMesh.m_SubMeshes.end(); iter++)
 				{
 					DXContext::Get().GetCommandList()->IASetIndexBuffer(&iter->second->m_IBView);
 					DXContext::Get().GetCommandList()->DrawIndexedInstanced(iter->second->m_IndexCount, 1, 0, 0, 0);

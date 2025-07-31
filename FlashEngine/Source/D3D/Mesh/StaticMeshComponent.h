@@ -73,6 +73,7 @@ public:
 	inline D3D12_VERTEX_BUFFER_VIEW& GetVBOView() { return m_VBOView; }
 	inline int GetVertexCount() { return m_VertexCount; }
 
+	void Render();
 	void CreateVBOView();
 	void SetVertexCount(UINT p_VertexCount);
 	void SetVertexPosition(int p_Index, Vector4d p_Position);

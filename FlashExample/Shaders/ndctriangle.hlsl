@@ -9,9 +9,9 @@ struct VertexData
 struct VSOut
 {
     float4 position : SV_Position;
-    float4 color : TEXCOORD0;
+    float4 normal : NORMAL;
 };
-
+static const float PI = 3.141592f;
 cbuffer globalConstants : register(b0)
 {
     float color;
@@ -32,16 +32,22 @@ VSOut MainVS(VertexData inVertexData)
     float4 positionWS = mul(ModelMatrix, inVertexData.position);
     float4 positionVS = mul(ViewMatrix, positionWS);
     vo.position = mul(ProjectionMatrix, positionVS);
-    vo.color = float4(inVertexData.normal.xyz, 1.0f);
+    vo.normal = inVertexData.normal;
     return vo;
 }
 
 float4 MainPS(VSOut inPsInput) : SV_Target
 {
-    float3 ambientColor = float3(0.1,0.1,0.1);
+    float3 N = normalize(inPsInput.normal.xyz);
+    float3 bottomColor = float3(0.1f, 0.4f, 0.6f);
+    float3 topColor = float3(0.7f, 0.7f, 0.7f);
+    float theta = asin(N.y); //-PI/2 ~ PI/2
+    theta /= PI; //-0.5~0.5
+    theta += 0.5f; //0.0~1.0
+    float ambientColorIntensity = 0.3;
+    float3 ambientColor = lerp(bottomColor, topColor, theta) * ambientColorIntensity;
     float3 diffuseColor = float3(0.0, 0.0, 0.0);
     float3 specularColor = float3(0.0, 0.0, 0.0);
     float3 surfaceColor = ambientColor + diffuseColor + specularColor;
     return float4(surfaceColor, 1.0f);
-    // return inPsInput.color;
 }

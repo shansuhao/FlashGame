@@ -57,6 +57,22 @@ bool StaticMeshComponent::InitFromFile(const char* p_MeshFile) {
 	return b_isCreateBufferObject;
 }
 
+void StaticMeshComponent::Render() {
+	D3D12_VERTEX_BUFFER_VIEW vbos[] = {
+		m_VBOView
+	};
+	DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
+	if (m_SubMeshes.empty())
+	{
+		DXContext::Get().GetCommandList()->DrawInstanced(m_VertexCount, 1, 0, 0);
+	}
+	for (auto iter = m_SubMeshes.begin(); iter != m_SubMeshes.end(); iter++)
+	{
+		DXContext::Get().GetCommandList()->IASetIndexBuffer(&iter->second->m_IBView);
+		DXContext::Get().GetCommandList()->DrawIndexedInstanced(iter->second->m_IndexCount, 1, 0, 0, 0);
+	}
+}
+
 void StaticMeshComponent::CreateVBOView() {
 	// ´´½¨VBO
 	m_VBOView.BufferLocation = m_VBO->GetGPUVirtualAddress();

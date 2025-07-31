@@ -36,15 +36,8 @@ bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComP
 	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 	psoDesc.RasterizerState.DepthClipEnable = true;
-	//psoDesc.RasterizerState.FrontCounterClockwise = false;
-	//psoDesc.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
-	//psoDesc.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
-	//psoDesc.RasterizerState.MultisampleEnable = false;
-	//psoDesc.RasterizerState.AntialiasedLineEnable = false;
-	//psoDesc.RasterizerState.ForcedSampleCount = 0;
-	//psoDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
-	psoDesc.DepthStencilState.DepthEnable = false;
+	psoDesc.DepthStencilState.DepthEnable = true;
 	psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 	psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
@@ -267,7 +260,12 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	ID3DBlob* signature;
 	HRESULT hResult = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, NULL);
 	__VERIFY_EXPR(hResult);
-	hResult = DXContext::Get().GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&p_RootSignature));
+
+	hResult = DXContext::Get().GetDevice()->CreateRootSignature(
+		0, signature->GetBufferPointer(), 
+		signature->GetBufferSize(), 
+		IID_PPV_ARGS(&p_RootSignature)
+	);
 	__VERIFY_EXPR(hResult);
 	return true;
 }

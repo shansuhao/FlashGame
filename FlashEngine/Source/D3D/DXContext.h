@@ -75,7 +75,7 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandles[FrameCount];
 	ComPointer<ID3D12DescriptorHeap> m_dsvDescHeap;
 
-	FVector4d m_backGroundColor{ 0.3f,0.6f,0.9f,1.f };
+	FVector4d m_backGroundColor{ 0.0f,0.0f,0.0f,1.f };
 public:
 	DXContext(const DXContext&) = delete;
 	DXContext& operator=(const DXContext&) = delete;
