@@ -11,25 +11,6 @@ int main(int argc, char* argv) {
 	if (DXWindow::Get().Init(WND_CLASS_NAME, WND_CLASS_NAME, IDI_ICON1, WND_WIDTH, WND_HEIGHT) && DXContext::Get().Init())
 	{
 		StaticMeshComponent staticMesh;
-		staticMesh.SetVertexCount(3);
-		staticMesh.SetVertexPosition(0, Vector4d(-1.0f, -1.0f, 1.0f, 1.0f));
-		staticMesh.SetVertexTexcoord(0, Vector4d(1.0f, 0.0f, 0.0f, 1.0f));
-		staticMesh.SetVertexNomal(0, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
-		staticMesh.SetVertexTangent(0, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
-
-		staticMesh.SetVertexPosition(1, Vector4d(0.0f, 1.0f, 1.0f, 1.0f));
-		staticMesh.SetVertexTexcoord(1, Vector4d(0.0f, 1.0f, 0.0f, 1.0f));
-		staticMesh.SetVertexNomal(1, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
-		staticMesh.SetVertexTangent(1, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
-
-		staticMesh.SetVertexPosition(2, Vector4d(1.0f, -1.0f, 1.0f, 1.0f));
-		staticMesh.SetVertexTexcoord(2, Vector4d(0.0f, 0.0f, 1.0f, 1.0f));
-		staticMesh.SetVertexNomal(2, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
-		staticMesh.SetVertexTangent(2, Vector4d(0.0f, 0.0f, 0.0f, 0.0f));
-
-
-		ComPointer<ID3D12PipelineState> m_PipeState;
-		ComPointer<ID3D12RootSignature> m_RootSignature;
 
 		D3D12_SHADER_BYTECODE t_vs = {};
 		D3D12_SHADER_BYTECODE t_ps = {};
@@ -42,15 +23,37 @@ int main(int argc, char* argv) {
 		D3DShader::Get().CreateShaderFromFile(L"Shaders/ndctriangle.hlsl", "MainPS", "ps_5_0", &t_ps);
 
 		BOOL p_IsInitShader_Success = false;
+
+		ComPointer<ID3D12PipelineState> m_PipeState;
+		ComPointer<ID3D12RootSignature> m_RootSignature;
+
+		DXContext::Get().InitCommandList();
+		p_IsInitShader_Success = staticMesh.InitFromFile("Resource/Model/Sphere.lhsm");
+
 		p_IsInitShader_Success = D3DShader::Get().InitShader(
-			staticMesh, m_RootSignature, 
-			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
-			m_PipeState, t_vs, t_ps, 
-			false, t_RootSignature
+			m_RootSignature, m_PipeState, t_vs, t_ps, false, t_RootSignature
 		);
 
-		staticMesh.CreateVBOView();
+		p_IsInitShader_Success = D3DShader::Get().CreateConstantBufferOBject(staticMesh.m_CB, 65536);
+		DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
+			(45.0f * 3.1415926f) / 180.0f,
+			((float)DXWindow::Get().GetWidth() / (float)DXWindow::Get().GetHeight()),
+			0.1f, 1000.0f
+		);
+		DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixIdentity();
+		DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 10.f);
+		DirectX::XMFLOAT4X4 tempMatrix;
 
+		float matrix[48];
+		DirectX::XMStoreFloat4x4(&tempMatrix, projectionMatrix);
+		memcpy(matrix, &tempMatrix, sizeof(float) * 16);
+		DirectX::XMStoreFloat4x4(&tempMatrix, viewMatrix);
+		memcpy(matrix + 16, &tempMatrix, sizeof(float) * 16);
+		DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
+		memcpy(matrix + 32, &tempMatrix, sizeof(float) * 16);
+		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 48);
+		DXContext::Get().ExeuteCommandList();
+		
 		D3D12_VERTEX_BUFFER_VIEW vbos[] = {
 			staticMesh.m_VBOView
 		};
@@ -79,7 +82,12 @@ int main(int argc, char* argv) {
 				DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh.m_CB->GetGPUVirtualAddress());
 				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
-				DXContext::Get().GetCommandList()->DrawInstanced(3, 1, 0, 0);
+				for (auto iter = staticMesh.m_SubMeshes.begin(); iter!= staticMesh.m_SubMeshes.end(); iter++)
+				{
+					DXContext::Get().GetCommandList()->IASetIndexBuffer(&iter->second->m_IBView);
+					DXContext::Get().GetCommandList()->DrawIndexedInstanced(iter->second->m_IndexCount, 1, 0, 0, 0);
+				}
+				//DXContext::Get().GetCommandList()->DrawInstanced(3, 1, 0, 0);
 			}
 
 			DXContext::Get().EndFrame();

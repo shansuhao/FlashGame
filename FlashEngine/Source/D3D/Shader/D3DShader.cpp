@@ -93,16 +93,15 @@ bool D3DShader::CreateBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_Data
 		NULL, 
 		IID_PPV_ARGS(&p_VBO)
 	));
-
 	d3d12_Resource_desc = p_VBO->GetDesc();
 	UINT64 memorySizeUsed = 0;
 	UINT64 rowSizeInBytes = 0;
 	UINT rowUsed = 0;
 
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT subFootprint;
-	DXContext::Get().GetDevice()->GetCopyableFootprints(&d3d12_Resource_desc, 0, 1, 0, &subFootprint, &rowUsed, &rowSizeInBytes, &memorySizeUsed);
-	// 3 x 4 x 4 = 48bytes,32bytes,24bytes + 24bytes
-	ComPointer<ID3D12Resource> tempBufferObject;
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT subresourceFootprint;
+	DXContext::Get().GetDevice()->GetCopyableFootprints(&d3d12_Resource_desc, 0, 1, 0, &subresourceFootprint, &rowUsed, &rowSizeInBytes, &memorySizeUsed);
+	
+	ID3D12Resource* tempBufferObject;
 	HeapProperties = {};
 	HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
 	__VERIFY_EXPR(DXContext::Get().GetDevice()->CreateCommittedResource(
@@ -115,23 +114,34 @@ bool D3DShader::CreateBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_Data
 	));
 
 	BYTE* pData;
-	D3D12_RANGE uploadRange;
-	uploadRange.Begin = 0;
-	uploadRange.End = p_DataLen;
 	tempBufferObject->Map(0, NULL, reinterpret_cast<void**>(&pData));
-	BYTE* pDstTempBuffer = reinterpret_cast<BYTE*>(pData + subFootprint.Offset);
+	BYTE* pDstTempBuffer = reinterpret_cast<BYTE*>(pData + subresourceFootprint.Offset);
 	const BYTE* pSrcData = reinterpret_cast<BYTE*>(m_Data);
 	for (size_t i = 0; i < rowUsed; i++)
 	{
-		memcpy(pDstTempBuffer + subFootprint.Footprint.RowPitch * i, pSrcData + rowSizeInBytes * i, rowSizeInBytes);
+		memcpy(pDstTempBuffer + subresourceFootprint.Footprint.RowPitch * i, pSrcData + rowSizeInBytes * i, rowSizeInBytes);
 	}
 	tempBufferObject->Unmap(0, NULL);
 
-	DXContext::Get().InitCommandList();
-	DXContext::Get().GetCommandList()->CopyBufferRegion(p_VBO, 0, tempBufferObject, 0, subFootprint.Footprint.Width);
-	DXContext::Get().ExeuteCommandList();
-
+	DXContext::Get().GetCommandList()->CopyBufferRegion(p_VBO, 0, tempBufferObject, 0, subresourceFootprint.Footprint.Width);
+	InitResourceBarrier(p_VBO, D3D12_RESOURCE_STATE_COPY_DEST, p_StateAfter);
+	
 	return true;
+}
+
+void D3DShader::InitResourceBarrier(
+	ComPointer<ID3D12Resource>& inResource, D3D12_RESOURCE_STATES inPrevState,
+	D3D12_RESOURCE_STATES inNextState)
+{
+	D3D12_RESOURCE_BARRIER d3d12ResourceBarrier;
+	memset(&d3d12ResourceBarrier, 0, sizeof(d3d12ResourceBarrier));
+	d3d12ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	d3d12ResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	d3d12ResourceBarrier.Transition.pResource = inResource;
+	d3d12ResourceBarrier.Transition.StateBefore = inPrevState;
+	d3d12ResourceBarrier.Transition.StateAfter = inNextState;
+	d3d12ResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	DXContext::Get().GetCommandList()->ResourceBarrier(1, &d3d12ResourceBarrier);
 }
 
 bool D3DShader::CreateConstantBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_DataLen)
@@ -264,9 +274,6 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 
 bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignature, D3D12_SHADER_BYTECODE p_RS)
 {
-	//ID3DBlob* signature;
-	//HRESULT hResult = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, NULL);
-	//__VERIFY_EXPR(hResult);
 	HRESULT hResult = DXContext::Get().GetDevice()->CreateRootSignature(0, p_RS.pShaderBytecode, p_RS.BytecodeLength, IID_PPV_ARGS(&p_RootSignature));
 
 	__VERIFY_EXPR(hResult);
@@ -274,14 +281,11 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 }
 
 BOOL D3DShader::InitShader(
-	StaticMeshComponent& p_staticMeshComponent,
 	ComPointer<ID3D12RootSignature>& p_RootSignature,
-	D3D12_RESOURCE_STATES p_StateAfter, 
 	ComPointer<ID3D12PipelineState>& p_PipeState,
 	D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps,
 	BOOL isFromRootSignatureFile, D3D12_SHADER_BYTECODE p_RS)
 {
-
 	// 初始化根签名
 	if (isFromRootSignatureFile)
 	{
@@ -292,45 +296,6 @@ BOOL D3DShader::InitShader(
 		if (!InitRootSignature(p_RootSignature)) return false;
 	}
 	if (!CreatePSO(p_RootSignature, p_PipeState, p_vs, p_ps)) return false;
-
-	if (!CreateConstantBufferOBject(p_staticMeshComponent.m_CB, 65536)) return false;
-	DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
-		(45.0f * 3.1415926f) / 180.0f, 
-		((float)DXWindow::Get().GetWidth()/ (float)DXWindow::Get().GetHeight()),
-		0.1f, 1000.0f
-	);
-	DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixIdentity();
-	DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f,0.0f,2.0f);
-	DirectX::XMFLOAT4X4 tempMatrix;
-
-	float matrix[48];
-	//{
-	//	1.0f,0.f,0.f,0.f,
-	//	0.f,1.f,0.f,0.f,
-	//	0.f,0.f,1.f,0.f,
-	//	0.f,0.f,0.f,1.f
-	//};
-	DirectX::XMStoreFloat4x4(&tempMatrix, projectionMatrix);
-	memcpy(matrix, &tempMatrix, sizeof(float) * 16);
-	DirectX::XMStoreFloat4x4(&tempMatrix, viewMatrix);
-	memcpy(matrix + 16, &tempMatrix, sizeof(float) * 16);
-	DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
-	memcpy(matrix + 32, &tempMatrix, sizeof(float) * 16);
-
-	UpdateConstantBuffer(p_staticMeshComponent.m_CB, matrix, sizeof(float) * 48);
-
-	// 创建 vbo
-	int p_DataLen = sizeof(StaticMeshComponentVertexData) * p_staticMeshComponent.m_VertexCount;
-	if (!CreateBufferOBject(p_staticMeshComponent.m_VBO, p_DataLen, p_staticMeshComponent.m_VertexData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)) return false;
-	
-	D3D12_RESOURCE_BARRIER barrier{};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = p_staticMeshComponent.m_VBO;
-	barrier.Transition.Subresource = 0;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-	barrier.Transition.StateAfter = p_StateAfter;
-	DXContext::Get().GetCommandList()->ResourceBarrier(1, &barrier);
 
 	return true;
 }

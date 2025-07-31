@@ -1,5 +1,61 @@
 #include "pch.h"
+#include "D3D/Shader/D3DShader.h"
 #include "StaticMeshComponent.h"
+#include <D3D/DXContext.h>
+
+bool StaticMeshComponent::InitFromFile(const char* p_MeshFile) {
+	FILE* pFile = nullptr;
+	BOOL b_isCreateBufferObject = true;
+	errno_t err = fopen_s(&pFile, p_MeshFile, "rb");
+	if (err == 0)
+	{
+		int temp = 0;
+		fread(&temp, 4, 1, pFile);
+
+		m_VertexCount = temp;
+		m_VertexData = new StaticMeshComponentVertexData[m_VertexCount];
+		fread(m_VertexData, 1, sizeof(StaticMeshComponentVertexData) * m_VertexCount, pFile);
+
+		b_isCreateBufferObject = D3DShader::Get().CreateBufferOBject(m_VBO, sizeof(StaticMeshComponentVertexData) * m_VertexCount,
+			m_VertexData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+
+		if (!b_isCreateBufferObject)
+		{
+			fclose(pFile);
+			return false;
+		}
+		CreateVBOView();
+
+		while (!feof(pFile))
+		{
+			fread(&temp, 4, 1, pFile);
+			if (feof(pFile))
+			{
+				break;
+			}
+			char name[256] = { 0 };
+			fread(name, 1, temp, pFile);
+			fread(&temp, 4, 1, pFile);
+			SubMesh* submesh = new SubMesh;
+			unsigned int* indexes = new unsigned int[temp];
+			fread(indexes, 1, sizeof(unsigned int) * temp, pFile);
+			b_isCreateBufferObject = D3DShader::Get().CreateBufferOBject(submesh->m_IBO, sizeof(unsigned int) * temp,
+				indexes, D3D12_RESOURCE_STATE_INDEX_BUFFER);
+			if (!b_isCreateBufferObject)
+			{
+				break;
+			}
+			submesh->m_IBView.BufferLocation = submesh->m_IBO->GetGPUVirtualAddress();
+			submesh->m_IBView.SizeInBytes = sizeof(unsigned int) * temp;
+			submesh->m_IBView.Format = DXGI_FORMAT_R32_UINT;
+
+			m_SubMeshes.insert(std::pair<std::string, SubMesh*>(name, submesh));
+			delete[] indexes;
+		}
+ 		fclose(pFile);
+	}
+	return b_isCreateBufferObject;
+}
 
 void StaticMeshComponent::CreateVBOView() {
 	// ´´½¨VBO

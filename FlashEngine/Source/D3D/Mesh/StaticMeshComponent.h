@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 #include <D3D/D3DLibary.h>
 #include <Utils/ComPointer.h>
 
@@ -45,23 +46,17 @@ struct StaticMeshComponentVertexData {
 			mTangent[i] = pTangent[i];
 		}
 	}
+};
 
-	//StaticMeshComponentVertexData(float* pPosition, float* pTexcoord, float* pNormal, float* pTangent)
-	//{
-	//	for (size_t i = 0; i < 4; i++)
-	//	{
-	//		mPosition[i] = pPosition[i];
-	//		mTexcoord[i] = pTexcoord[i];
-	//		mNormal[i] = pNormal[i];
-	//		mTangent[i] = pTangent[i];
-	//	}
-	//}
+struct SubMesh {
+	ComPointer<ID3D12Resource> m_IBO;
+	D3D12_INDEX_BUFFER_VIEW m_IBView;
+	int m_IndexCount;
 };
 
 class StaticMeshComponent {
 public:
 	StaticMeshComponent() = default;
-
 public:
 	int m_VertexCount;
 	ComPointer<ID3D12Resource> m_VBO;
@@ -69,7 +64,10 @@ public:
 	D3D12_VERTEX_BUFFER_VIEW m_VBOView;
 	StaticMeshComponentVertexData* m_VertexData;
 
+	std::unordered_map<std::string, SubMesh*> m_SubMeshes;
 public:
+	bool InitFromFile(const char* p_MeshFile);
+
 	inline StaticMeshComponentVertexData* GetVertexData() const { return m_VertexData; }
 	inline ComPointer<ID3D12Resource> GetVBO()const { return m_VBO; }
 	inline D3D12_VERTEX_BUFFER_VIEW& GetVBOView() { return m_VBOView; }
