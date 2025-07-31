@@ -41,17 +41,25 @@ int main(int argc, char* argv) {
 			0.1f, 1000.0f
 		);
 		DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixIdentity();
-		DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 10.f);
+		DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 5.f);
+		modelMatrix *= DirectX::XMMatrixRotationZ(90.0f*3.1415926f/180.0f);
 		DirectX::XMFLOAT4X4 tempMatrix;
-		float matrix[48];
+		float matrix[64];
 		DirectX::XMStoreFloat4x4(&tempMatrix, projectionMatrix);
 		memcpy(matrix, &tempMatrix, sizeof(float) * 16);
 		DirectX::XMStoreFloat4x4(&tempMatrix, viewMatrix);
 		memcpy(matrix + 16, &tempMatrix, sizeof(float) * 16);
 		DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
 		memcpy(matrix + 32, &tempMatrix, sizeof(float) * 16);
-		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 48);
-
+		DirectX::XMVECTOR determinant;
+		DirectX::XMMATRIX inverseModelMatrix = DirectX::XMMatrixInverse(&determinant, modelMatrix);
+		if (DirectX::XMVectorGetX(determinant) != 0.0f)
+		{
+			DirectX::XMMATRIX normalMatrix = DirectX::XMMatrixTranspose(inverseModelMatrix);
+			DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
+			memcpy(matrix + 48, &tempMatrix, sizeof(float) * 16);
+		}
+		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 64);
 
 		DXContext::Get().ExeuteCommandList();
 		

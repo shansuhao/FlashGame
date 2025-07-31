@@ -32,7 +32,7 @@ VSOut MainVS(VertexData inVertexData)
     float4 positionWS = mul(ModelMatrix, inVertexData.position);
     float4 positionVS = mul(ViewMatrix, positionWS);
     vo.position = mul(ProjectionMatrix, positionVS);
-    vo.normal = inVertexData.normal;
+    vo.normal = mul(IT_ModelMatrix, inVertexData.normal);
     return vo;
 }
 
@@ -44,7 +44,7 @@ float4 MainPS(VSOut inPsInput) : SV_Target
     float theta = asin(N.y); //-PI/2 ~ PI/2
     theta /= PI; //-0.5~0.5
     theta += 0.5f; //0.0~1.0
-    float ambientColorIntensity = 0.3;
+    float ambientColorIntensity = 0.6;
     float3 ambientColor = lerp(bottomColor, topColor, theta) * ambientColorIntensity;
     float3 diffuseColor = float3(0.0, 0.0, 0.0);
     float3 specularColor = float3(0.0, 0.0, 0.0);
