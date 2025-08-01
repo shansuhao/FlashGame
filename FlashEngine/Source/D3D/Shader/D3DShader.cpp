@@ -249,7 +249,8 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	rootParameter[0].Constants.Num32BitValues = 4;
 
 	rootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	//rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParameter[1].Constants.RegisterSpace = 0;
 	rootParameter[1].Constants.ShaderRegister = 1;
 
