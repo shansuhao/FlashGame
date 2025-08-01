@@ -14,13 +14,15 @@ int main(int argc, char* argv) {
 
 		D3D12_SHADER_BYTECODE t_vs = {};
 		D3D12_SHADER_BYTECODE t_ps = {};
+		D3D12_SHADER_BYTECODE t_gs = {};
 		D3D12_SHADER_BYTECODE t_RootSignature = {};
 
 		//D3DShader::Get().InitShaderFile(L"VertexShader.cso", &t_vs);
 		//D3DShader::Get().InitShaderFile(L"PixelShader.cso", &t_ps);
 		//D3DShader::Get().InitShaderFile(L"RootSignature.cso", &t_RootSignature); 
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/ndctriangle.hlsl", "MainVS", "vs_5_0", &t_vs);
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/ndctriangle.hlsl", "MainPS", "ps_5_0", &t_ps);
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainVS", "vs_5_0", &t_vs);
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainGS", "gs_5_0", &t_gs);
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainPS", "ps_5_0", &t_ps);
 
 		BOOL p_IsInitShader_Success = false;
 
@@ -31,7 +33,7 @@ int main(int argc, char* argv) {
 		p_IsInitShader_Success = staticMesh.InitFromFile("Resource/Model/Sphere.lhsm");
 
 		p_IsInitShader_Success = D3DShader::Get().InitShader(
-			m_RootSignature, m_PipeState, t_vs, t_ps, false, t_RootSignature
+			m_RootSignature, m_PipeState, t_vs, t_ps, t_gs, false, t_RootSignature
 		);
 
 		p_IsInitShader_Success = D3DShader::Get().CreateConstantBufferOBject(staticMesh.m_CB, 65536);
@@ -78,7 +80,7 @@ int main(int argc, char* argv) {
 			last_time = current_time;
 			float deltaTimeInSecond = float(frameTime) / 1000.0f;
 			float timeSinceAppStartInSecond = float(timeSinceAppStartInMS) / 1000.0f;
-			std::cout << "TtimeSinceAppStart:" << timeSinceAppStartInSecond << std::endl;
+
 			color[0] = timeSinceAppStartInSecond;
 
 			if (DXWindow::Get().ShouldResize())

@@ -8,7 +8,7 @@
 #include <cstdlib>
 
 // 参数设置结合宏定义处理
-bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12PipelineState>& p_PipeState,D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps)
+bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12PipelineState>& p_PipeState,D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps, D3D12_SHADER_BYTECODE p_gs)
 {
 	D3D12_INPUT_ELEMENT_DESC vertexElementDesc[] = {
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, sizeof(float) * 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
@@ -25,6 +25,7 @@ bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComP
 	psoDesc.pRootSignature = p_RootSignature;
 	psoDesc.VS = p_vs;
 	psoDesc.PS = p_ps;
+	psoDesc.GS = p_gs;
 	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	psoDesc.SampleDesc.Count = 1;
@@ -281,7 +282,7 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 BOOL D3DShader::InitShader(
 	ComPointer<ID3D12RootSignature>& p_RootSignature,
 	ComPointer<ID3D12PipelineState>& p_PipeState,
-	D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps,
+	D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps, D3D12_SHADER_BYTECODE p_gs,
 	BOOL isFromRootSignatureFile, D3D12_SHADER_BYTECODE p_RS)
 {
 	// 初始化根签名
@@ -293,7 +294,7 @@ BOOL D3DShader::InitShader(
 	{
 		if (!InitRootSignature(p_RootSignature)) return false;
 	}
-	if (!CreatePSO(p_RootSignature, p_PipeState, p_vs, p_ps)) return false;
+	if (!CreatePSO(p_RootSignature, p_PipeState, p_vs, p_ps, p_gs)) return false;
 
 	return true;
 }

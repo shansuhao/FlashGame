@@ -42,6 +42,13 @@ VSOut MainVS(VertexData inVertexData)
     return vo;
 }
 
+[maxvertexcount(4)]
+void MainGS(point VSOut inPoint[1], uint inPrimitiveId:SV_PrimitiveID, inout PointStream<VSOut> outPointStream)
+{
+    inPoint[0].texcoord = float4(0.0f,0.0f,0.0f,0.0f);
+    outPointStream.Append(inPoint[0]);
+}
+
 float4 MainPS(VSOut inPsInput) : SV_Target
 {
     float3 N = normalize(inPsInput.normal.xyz);
@@ -70,6 +77,6 @@ float4 MainPS(VSOut inPsInput) : SV_Target
     float3 surfaceColor = ambientColor + diffuseColor + specularColor;
 */
     
-    float3 surfaceColor = ambientColor;
+    float3 surfaceColor = ambientColor + inPsInput.texcoord.rgb;
     return float4(surfaceColor, 1.0f);
 }
