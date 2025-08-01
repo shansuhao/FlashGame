@@ -7,3 +7,5 @@
 #define WND_CLASS_NAME		L"FlashExample"
 #define WND_WIDTH			1920
 #define WND_HEIGHT			1080
+
+#pragma comment(lib, "winmm.lib")

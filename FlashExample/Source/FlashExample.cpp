@@ -63,13 +63,24 @@ int main(int argc, char* argv) {
 
 		DXContext::Get().ExeuteCommandList();
 		
-
 		float color[] = {0.5f, 0.5f, 0.5f, 1.f};
 
+		DWORD last_time = timeGetTime();
+		DWORD appStartTime = last_time;
 		DXWindow::Get().SetFullscreen(true);
 		while (!DXWindow::Get().ShouldClose())
 		{
 			DXWindow::Get().UpdateWindow();
+
+			DWORD current_time = timeGetTime();
+			DWORD frameTime = current_time - last_time;
+			DWORD timeSinceAppStartInMS = current_time - appStartTime;
+			last_time = current_time;
+			float deltaTimeInSecond = float(frameTime) / 1000.0f;
+			float timeSinceAppStartInSecond = float(timeSinceAppStartInMS) / 1000.0f;
+			std::cout << "TtimeSinceAppStart:" << timeSinceAppStartInSecond << std::endl;
+			color[0] = timeSinceAppStartInSecond;
+
 			if (DXWindow::Get().ShouldResize())
 			{
 				DXContext::Get().Flush();
@@ -86,9 +97,14 @@ int main(int argc, char* argv) {
 				DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
 				DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 4, color, 0);
 				DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh.m_CB->GetGPUVirtualAddress());
-				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+				D3D12_VERTEX_BUFFER_VIEW vbos[] = {
+					staticMesh.m_VBOView
+				};
+				DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
+				DXContext::Get().GetCommandList()->DrawInstanced(staticMesh.m_VertexCount, 1, 0, 0);
 
-				staticMesh.Render();
+				//staticMesh.Render();
 			}
 
 			DXContext::Get().EndFrame();

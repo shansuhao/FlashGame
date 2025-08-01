@@ -31,7 +31,7 @@ bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComP
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.SampleMask = 0xffffffff;
 	psoDesc.InputLayout = vertexLayoutDesc;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
 
 	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;

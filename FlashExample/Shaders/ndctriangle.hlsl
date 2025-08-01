@@ -32,10 +32,11 @@ cbuffer DefaultVertexCB : register(b1)
 VSOut MainVS(VertexData inVertexData)
 {
     VSOut vo;
-    float4 positionWS = mul(ModelMatrix, inVertexData.position);
+    vo.normal = mul(IT_ModelMatrix, inVertexData.normal);
+    float3 positionMS = inVertexData.position.xyz + vo.normal * sin(color.x);
+    float4 positionWS = mul(ModelMatrix, float4(positionMS, 1.0f));
     float4 positionVS = mul(ViewMatrix, positionWS);
     vo.position = mul(ProjectionMatrix, positionVS);
-    vo.normal = mul(IT_ModelMatrix, inVertexData.normal);
     vo.positionWS = positionWS;
     vo.texcoord = inVertexData.texcoord;
     return vo;
@@ -62,7 +63,7 @@ float4 MainPS(VSOut inPsInput) : SV_Target
         float3 cameraPositionWS = float3(0.0f, 0.0f, 0.0f);
         float3 V = normalize(cameraPositionWS - inPsInput.positionWS.xyz);
         float3 R = normalize(reflect(-L, N));
-        float specularIntensity = pow(max(0.0f, dot(V, R)), 32.0f);
+        float specularIntensity = pow(max(0.0f, dot(V, R)), 128.0f);
         specularColor = float3(1.0f, 1.0f, 1.0f) * specularIntensity;
     }
     float3 surfaceColor = ambientColor + diffuseColor + specularColor;
