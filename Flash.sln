@@ -34,6 +34,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{BEADDD68-A
 		Readme.md = Readme.md
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FlashUIDemo", "FlashUIDemo\FlashUIDemo.vcxproj", "{A1D58F88-7BE1-4773-9D37-691D2C5581FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -66,6 +68,14 @@ Global
 		{39867E15-A2FC-411F-A1CF-659DA86684C6}.Release|x64.Build.0 = Release|x64
 		{39867E15-A2FC-411F-A1CF-659DA86684C6}.Release|x86.ActiveCfg = Release|Win32
 		{39867E15-A2FC-411F-A1CF-659DA86684C6}.Release|x86.Build.0 = Release|Win32
+		{A1D58F88-7BE1-4773-9D37-691D2C5581FF}.Debug|x64.ActiveCfg = Debug|x64
+		{A1D58F88-7BE1-4773-9D37-691D2C5581FF}.Debug|x64.Build.0 = Debug|x64
+		{A1D58F88-7BE1-4773-9D37-691D2C5581FF}.Debug|x86.ActiveCfg = Debug|Win32
+		{A1D58F88-7BE1-4773-9D37-691D2C5581FF}.Debug|x86.Build.0 = Debug|Win32
+		{A1D58F88-7BE1-4773-9D37-691D2C5581FF}.Release|x64.ActiveCfg = Release|x64
+		{A1D58F88-7BE1-4773-9D37-691D2C5581FF}.Release|x64.Build.0 = Release|x64
+		{A1D58F88-7BE1-4773-9D37-691D2C5581FF}.Release|x86.ActiveCfg = Release|Win32
+		{A1D58F88-7BE1-4773-9D37-691D2C5581FF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -75,6 +85,7 @@ Global
 		{278691EC-DE35-4781-8766-394763C50BE6} = {AFBCB3C4-2B4F-41DE-81C0-64263FEADA59}
 		{AF7834A2-C1D8-4FA2-88FA-645223C57F48} = {7BC5496C-2173-46C2-8F3E-EAB668A401F2}
 		{39867E15-A2FC-411F-A1CF-659DA86684C6} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{A1D58F88-7BE1-4773-9D37-691D2C5581FF} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {04B5C44A-6A42-4980-9152-464C677C4BC0}
