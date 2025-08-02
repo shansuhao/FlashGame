@@ -87,6 +87,7 @@ bool D3DShader::CreateBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_Data
 		NULL, 
 		IID_PPV_ARGS(&p_VBO)
 	));
+
 	d3d12_Resource_desc = p_VBO->GetDesc();
 	UINT64 memorySizeUsed = 0;
 	UINT64 rowSizeInBytes = 0;
@@ -241,7 +242,7 @@ void D3DShader::InitShaderFile(LPCTSTR p_ShaderFilePath, D3D12_SHADER_BYTECODE* 
 
 bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignature)
 {
-	D3D12_ROOT_PARAMETER rootParameter[2] = {};
+	D3D12_ROOT_PARAMETER rootParameter[3] = {};
 	rootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameter[0].Constants.RegisterSpace = 0;
@@ -249,15 +250,40 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	rootParameter[0].Constants.Num32BitValues = 4;
 
 	rootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	//rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParameter[1].Constants.RegisterSpace = 0;
 	rootParameter[1].Constants.ShaderRegister = 1;
+
+	D3D12_DESCRIPTOR_RANGE descRange[1] = {};
+	descRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	descRange[0].RegisterSpace = 0;
+	descRange[0].BaseShaderRegister = 0;
+	descRange[0].NumDescriptors = 1;
+	descRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	rootParameter[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootParameter[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	rootParameter[2].DescriptorTable.pDescriptorRanges = descRange;
+	rootParameter[2].DescriptorTable.NumDescriptorRanges = _countof(descRange);
+
+	D3D12_STATIC_SAMPLER_DESC samplerDesc[1] = {};
+	memset(samplerDesc,0, sizeof(D3D12_STATIC_SAMPLER_DESC)*_countof(samplerDesc));
+	samplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	samplerDesc[0].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+	samplerDesc[0].MaxLOD = D3D12_FLOAT32_MAX;
+	samplerDesc[0].RegisterSpace = 0;
+	samplerDesc[0].ShaderRegister = 0;
+	samplerDesc[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_DESC rsDesc = {};
 	rsDesc.NumParameters = _countof(rootParameter);
 	rsDesc.pParameters = rootParameter;
 	rsDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	rsDesc.NumStaticSamplers = _countof(samplerDesc);
+	rsDesc.pStaticSamplers = samplerDesc;
 
 	ID3DBlob* signature;
 	HRESULT hResult = D3D12SerializeRootSignature(&rsDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, NULL);
@@ -296,6 +322,109 @@ BOOL D3DShader::InitShader(
 		if (!InitRootSignature(p_RootSignature)) return false;
 	}
 	if (!CreatePSO(p_RootSignature, p_PipeState, p_vs, p_ps, p_gs)) return false;
+
+	return true;
+}
+
+bool D3DShader::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture)
+{
+	D3D12_HEAP_PROPERTIES d3dHeapProperties = {};
+	d3dHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	D3D12_RESOURCE_DESC d3d12ResourceDesc = {};
+	d3d12ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	d3d12ResourceDesc.Alignment = 0;
+	d3d12ResourceDesc.Width = 256;
+	d3d12ResourceDesc.Height = 256;
+	d3d12ResourceDesc.DepthOrArraySize = 1;
+	d3d12ResourceDesc.MipLevels = 1;
+	d3d12ResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3d12ResourceDesc.SampleDesc.Count = 1;
+	d3d12ResourceDesc.SampleDesc.Quality = 0;
+	d3d12ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	d3d12ResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	HRESULT hResult = DXContext::Get().GetDevice()->CreateCommittedResource(&d3dHeapProperties, D3D12_HEAP_FLAG_NONE
+		, &d3d12ResourceDesc,D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&p_Texture));
+	__VERIFY_EXPR(hResult);
+
+	d3d12ResourceDesc = p_Texture->GetDesc();
+	UINT64 memorySizeUsed = 0;
+	UINT64 rowSizeInBytes = 0;
+	UINT rowUsed = 0;
+
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT subresourceFootprint;
+	DXContext::Get().GetDevice()->GetCopyableFootprints(&d3d12ResourceDesc, 0, 1, 0, &subresourceFootprint, &rowUsed, &rowSizeInBytes, &memorySizeUsed);
+
+	ID3D12Resource* tempBufferObject;
+	d3dHeapProperties = {};
+	d3dHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	D3D12_RESOURCE_DESC d3d12TempResourceDesc = {};
+	d3d12TempResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	d3d12TempResourceDesc.Alignment = 0;
+	d3d12TempResourceDesc.Width = memorySizeUsed;
+	d3d12TempResourceDesc.Height = 1;
+	d3d12TempResourceDesc.DepthOrArraySize = 1;
+	d3d12TempResourceDesc.MipLevels = 1;
+	d3d12TempResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	d3d12TempResourceDesc.SampleDesc.Count = 1;
+	d3d12TempResourceDesc.SampleDesc.Quality = 0;
+	d3d12TempResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	d3d12TempResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	__VERIFY_EXPR(DXContext::Get().GetDevice()->CreateCommittedResource(
+		&d3dHeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&d3d12TempResourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		NULL,
+		IID_PPV_ARGS(&tempBufferObject)
+	));
+
+	unsigned char* p_Data = new unsigned char[256 * 256 * 4];
+	memset(p_Data, 0, 256 * 256 * 4);
+	for (size_t y = 0; y < 256; y++)
+	{
+		for (size_t x = 0; x < 256; x++)
+		{
+			float radiusSqrt = float((x-128) * (x-128) + (y-128) * (y - 128));
+			if (radiusSqrt > 128 * 128)
+			{
+				float radius = sqrtf(radiusSqrt);
+				float alpha = radius / 128.0f;
+				int pixelIndex = y * 256 + x;
+				p_Data[pixelIndex * 4] = 255;
+				p_Data[pixelIndex * 4 + 1] = 255;
+				p_Data[pixelIndex * 4 + 2] = 255;
+				p_Data[pixelIndex * 4 + 3] = unsigned char(alpha * 255);
+			}
+		}
+	}
+
+	BYTE* pData;
+	tempBufferObject->Map(0, NULL, reinterpret_cast<void**>(&pData));
+	BYTE* pDstTempBuffer = reinterpret_cast<BYTE*>(pData + subresourceFootprint.Offset);
+	const BYTE* pSrcData = reinterpret_cast<BYTE*>(p_Data);
+	for (size_t i = 0; i < rowUsed; i++)
+	{
+		memcpy(pDstTempBuffer + subresourceFootprint.Footprint.RowPitch * i, pSrcData + rowSizeInBytes * i, rowSizeInBytes);
+	}
+	tempBufferObject->Unmap(0, NULL);
+
+	D3D12_TEXTURE_COPY_LOCATION dst = {};
+	dst.pResource = p_Texture;
+	dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	dst.SubresourceIndex = 0;
+
+	D3D12_TEXTURE_COPY_LOCATION src = {};
+	src.pResource = tempBufferObject;
+	src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+	src.PlacedFootprint = subresourceFootprint;
+	DXContext::Get().GetCommandList()->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+	InitResourceBarrier(p_Texture,
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
 	return true;
 }

@@ -62,6 +62,23 @@ int main(int argc, char* argv) {
 			memcpy(matrix + 48, &tempMatrix, sizeof(float) * 16);
 		}
 		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 64);
+		ComPointer<ID3D12Resource> texture;
+		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texture);
+
+		ID3D12DescriptorHeap* srvHeap = NULL;
+		D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc{};
+		srvHeapDesc.NumDescriptors = 1;
+		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+		DXContext::Get().GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
+
+		ID3D12DescriptorHeap* descriptorHeaps[] = { srvHeap };
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, nullptr, srvHeap->GetCPUDescriptorHandleForHeapStart());
 
 		DXContext::Get().ExeuteCommandList();
 		
@@ -97,8 +114,10 @@ int main(int argc, char* argv) {
 			{
 				DXContext::Get().GetCommandList()->SetPipelineState(m_PipeState);
 				DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
-				DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 4, color, 0);
+				DXContext::Get().GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 				DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh.m_CB->GetGPUVirtualAddress());
+				DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 4, color, 0);
+				DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
 				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 				D3D12_VERTEX_BUFFER_VIEW vbos[] = {
 					staticMesh.m_VBOView

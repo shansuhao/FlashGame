@@ -18,7 +18,10 @@ static const float PI = 3.141592f;
 cbuffer globalConstants : register(b0)
 {
     float color;
-}
+};
+
+Texture2D tex : register(t0);
+SamplerState samplerState : register(s0);
 
 cbuffer DefaultVertexCB : register(b1)
 {
@@ -27,7 +30,7 @@ cbuffer DefaultVertexCB : register(b1)
     float4x4 ModelMatrix;
     float4x4 IT_ModelMatrix;
     float4x4 ReservedMemory[1020];
-}
+};
 
 VSOut MainVS(VertexData inVertexData)
 {
@@ -61,21 +64,25 @@ void MainGS(point VSOut inPoint[1], uint inPrimitiveId:SV_PrimitiveID, inout Tri
     float3 p0WS = positionWS.xyz + (bitangent * (-0.5f) + tangent * (-0.5f)) * 0.1f; //left bottom
     float4 p0VS = mul(ViewMatrix, float4(p0WS.xyz, 1.0f));
     vo.position = mul(ProjectionMatrix, p0VS);
+    vo.texcoord = float4(1.0f, 1.0f, 0.0f, 0.0f);
     outTriangleStream.Append(vo);
     
     float3 p1WS = positionWS.xyz + (bitangent * (0.5f) + tangent * (-0.5f)) * 0.1f;
     float4 p1VS = mul(ViewMatrix, float4(p1WS.xyz, 1.0f));
     vo.position = mul(ProjectionMatrix, p1VS);
+    vo.texcoord = float4(1.0f, 0.0f, 0.0f, 0.0f);
     outTriangleStream.Append(vo);
     
     float3 p2WS = positionWS.xyz + (bitangent * (-0.5f) + tangent * (0.5f)) * 0.1f;
     float4 p2VS = mul(ViewMatrix, float4(p2WS.xyz, 1.0f));
     vo.position = mul(ProjectionMatrix, p2VS);
+    vo.texcoord = float4(0.0f, 1.0f, 0.0f, 0.0f);
     outTriangleStream.Append(vo);
     
     float3 p3WS = positionWS.xyz + (bitangent * (0.5f) + tangent * (0.5f)) * 0.1f;
     float4 p3VS = mul(ViewMatrix, float4(p3WS.xyz, 1.0f));
     vo.position = mul(ProjectionMatrix, p3VS);
+    vo.texcoord = float4(0.0f,0.0f,0.0f,0.0f);
     outTriangleStream.Append(vo);
 }
 
@@ -107,6 +114,6 @@ float4 MainPS(VSOut inPsInput) : SV_Target
     float3 surfaceColor = ambientColor + diffuseColor + specularColor;
 */
     
-    float3 surfaceColor = ambientColor;
+    float3 surfaceColor = ambientColor + tex.Sample(samplerState, inPsInput.texcoord.xy);
     return float4(surfaceColor, 1.0f);
 }

@@ -41,6 +41,8 @@ public:
 		BOOL isFromRootSignatureFile = false, D3D12_SHADER_BYTECODE p_RS = {}
 	);
 
+	bool CreateTexture2D(ComPointer<ID3D12Resource>& p_VBO);
+
 private:
 	D3DShader() = default;
 };
