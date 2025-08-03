@@ -73,12 +73,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\$(Platform)-$(Configuration)\obj\$(ProjectName)\</IntDir>
-    <IncludePath>$(SolutionDir)FlashEngine\Libary;$(SolutionDir)FlashEngine\Source;$(SolutionDir)FlashEngine\;$(ProjectDir);$(ProjectDir)Libary;$(ProjectDir)Source;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)libary;$(SolutionDir)FlashEngine\Libary;$(SolutionDir)FlashEngine\Source;$(SolutionDir)FlashEngine\;$(ProjectDir);$(ProjectDir)Libary;$(ProjectDir)Source;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)build\$(Platform)-$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)build\$(Platform)-$(Configuration)\obj\$(ProjectName)\</IntDir>
-    <IncludePath>$(SolutionDir)FlashEngine\Libary;$(SolutionDir)FlashEngine\Source;$(SolutionDir)FlashEngine\;$(ProjectDir);$(ProjectDir)Libary;$(ProjectDir)Source;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)libary;$(SolutionDir)FlashEngine\Libary;$(SolutionDir)FlashEngine\Source;$(SolutionDir)FlashEngine\;$(ProjectDir);$(ProjectDir)Libary;$(ProjectDir)Source;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>

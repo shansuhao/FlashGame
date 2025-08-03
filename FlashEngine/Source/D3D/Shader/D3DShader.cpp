@@ -326,7 +326,7 @@ BOOL D3DShader::InitShader(
 	return true;
 }
 
-bool D3DShader::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture)
+bool D3DShader::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture, const void* p_PixelData, int p_DataSize, int p_DataWidth, int p_DataHeight, DXGI_FORMAT p_PixelFormat)
 {
 	D3D12_HEAP_PROPERTIES d3dHeapProperties = {};
 	d3dHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -334,11 +334,11 @@ bool D3DShader::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture)
 	D3D12_RESOURCE_DESC d3d12ResourceDesc = {};
 	d3d12ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	d3d12ResourceDesc.Alignment = 0;
-	d3d12ResourceDesc.Width = 256;
-	d3d12ResourceDesc.Height = 256;
+	d3d12ResourceDesc.Width = p_DataWidth;
+	d3d12ResourceDesc.Height = p_DataHeight;
 	d3d12ResourceDesc.DepthOrArraySize = 1;
 	d3d12ResourceDesc.MipLevels = 1;
-	d3d12ResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	d3d12ResourceDesc.Format = p_PixelFormat;
 	d3d12ResourceDesc.SampleDesc.Count = 1;
 	d3d12ResourceDesc.SampleDesc.Quality = 0;
 	d3d12ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -382,35 +382,10 @@ bool D3DShader::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture)
 		IID_PPV_ARGS(&tempBufferObject)
 	));
 
-	unsigned char* p_Data = new unsigned char[256 * 256 * 4];
-	memset(p_Data, 0, 256 * 256 * 4);
-	for (size_t y = 0; y < 256; y++)
-	{
-		for (size_t x = 0; x < 256; x++)
-		{
-			float radiusSqrt = float((x-128) * (x-128) + (y-128) * (y - 128));
-			if (radiusSqrt <= 128 * 128)
-			{
-				float radius = sqrtf(radiusSqrt);
-				float alpha = radius / 128.0f;
-				
-				alpha = alpha > 1.0f ? 1.0f : alpha;
-				alpha = 1.0f - alpha;
-				alpha = powf(alpha, 2.0f);
-
-				int pixelIndex = y * 256 + x;
-				p_Data[pixelIndex * 4] = 255;
-				p_Data[pixelIndex * 4 + 1] = 255;
-				p_Data[pixelIndex * 4 + 2] = 255;
-				p_Data[pixelIndex * 4 + 3] = unsigned char(alpha * 255);
-			}
-		}
-	}
-
 	BYTE* pData;
 	tempBufferObject->Map(0, NULL, reinterpret_cast<void**>(&pData));
 	BYTE* pDstTempBuffer = reinterpret_cast<BYTE*>(pData + subresourceFootprint.Offset);
-	const BYTE* pSrcData = reinterpret_cast<BYTE*>(p_Data);
+	const BYTE* pSrcData = reinterpret_cast<const BYTE*>(p_PixelData);
 	for (size_t i = 0; i < rowUsed; i++)
 	{
 		memcpy(pDstTempBuffer + subresourceFootprint.Footprint.RowPitch * i, pSrcData + rowSizeInBytes * i, rowSizeInBytes);

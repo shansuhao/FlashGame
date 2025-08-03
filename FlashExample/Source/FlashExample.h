@@ -8,4 +8,6 @@
 #define WND_WIDTH			1920
 #define WND_HEIGHT			1080
 
+#define STB_IMAGE_IMPLEMENTATION
+
 #pragma comment(lib, "winmm.lib")

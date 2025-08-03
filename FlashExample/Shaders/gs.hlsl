@@ -94,24 +94,8 @@ float4 MainPS(VSOut inPsInput) : SV_Target
     theta += 0.5f; //0.0~1.0
     float ambientColorIntensity = 1.0;
     float3 ambientColor = lerp(bottomColor, topColor, theta) * ambientColorIntensity;
-    
-/*    
-    float3 L = normalize(float3(1.0f,1.0f,-1.0f));
-    float diffuseIntensity = max(0.0f, dot(N, L));
-    float3 diffuserLightColor = float3(0.1f, 0.4f, 0.6f);
-    float3 diffuseColor = diffuserLightColor * diffuseIntensity;
-    float3 specularColor = float3(0.0, 0.0, 0.0);
-    if (diffuseIntensity > 0.0f)
-    {
-        float3 cameraPositionWS = float3(0.0f, 0.0f, 0.0f);
-        float3 V = normalize(cameraPositionWS - inPsInput.positionWS.xyz);
-        float3 R = normalize(reflect(-L, N));
-        float specularIntensity = pow(max(0.0f, dot(V, R)), 128.0f);
-        specularColor = float3(1.0f, 1.0f, 1.0f) * specularIntensity;
-    }
-    float3 surfaceColor = ambientColor + diffuseColor + specularColor;
-*/
+
     float4 colorFromTexture = tex.Sample(samplerState, inPsInput.texcoord.xy);
-    float3 surfaceColor = ambientColor + colorFromTexture.rgb;
+    float3 surfaceColor = colorFromTexture.rgb;
     return float4(surfaceColor, colorFromTexture.a);
 }

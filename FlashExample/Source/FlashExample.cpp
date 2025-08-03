@@ -1,4 +1,5 @@
 #include "FlashExample.h"
+#include "Utils/ReadFile.h"
 #include "D3D/Shader/D3DShader.h"
 #include "D3D/Mesh/StaticMeshComponent.h"
 
@@ -63,8 +64,38 @@ int main(int argc, char* argv) {
 		}
 		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 64);
 
+		// Éú³ÉÍ¼Æ¬
+		/*unsigned char* p_Data = new unsigned char[256 * 256 * 4];
+		memset(p_Data, 0, 256 * 256 * 4);
+		for (size_t y = 0; y < 256; y++)
+		{
+			for (size_t x = 0; x < 256; x++)
+			{
+				float radiusSqrt = float((x - 128) * (x - 128) + (y - 128) * (y - 128));
+				if (radiusSqrt <= 128 * 128)
+				{
+					float radius = sqrtf(radiusSqrt);
+					float alpha = radius / 128.0f;
+
+					alpha = alpha > 1.0f ? 1.0f : alpha;
+					alpha = 1.0f - alpha;
+					alpha = powf(alpha, 2.0f);
+
+					int pixelIndex = y * 256 + x;
+					p_Data[pixelIndex * 4] = 255;
+					p_Data[pixelIndex * 4 + 1] = 255;
+					p_Data[pixelIndex * 4 + 2] = 255;
+					p_Data[pixelIndex * 4 + 3] = unsigned char(alpha * 255);
+				}
+			}
+		}*/
+
+		stbi_uc* data = nullptr;
+		int imageWidth, imageHeight;
+		Flash::ReadFile::ReadImage("Resource/Image/Mario.png", &imageWidth, &imageHeight, &data);
+
 		ComPointer<ID3D12Resource> texture;
-		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texture);
+		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texture, data, 256 * 256 * 4, 256 ,256, DXGI_FORMAT_R8G8B8A8_UNORM);
 
 		ID3D12DescriptorHeap* srvHeap = NULL;
 		D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc{};
