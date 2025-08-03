@@ -4,14 +4,11 @@
     "glew",
     "glfw3",
     "glm",
+    "juce",
+    "libigl",
     "opengl",
     "sfml",
-    "stb",
-    {
-      "name": "tgui",
-      "features": [
-        "sfml"
-      ]
-    }
+    "tgui",
+    "guilite"
   ]
 }
