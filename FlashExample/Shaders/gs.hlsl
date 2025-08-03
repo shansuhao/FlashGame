@@ -20,7 +20,7 @@ cbuffer globalConstants : register(b0)
     float color;
 };
 
-Texture2D tex[2] : register(t0);
+Texture2D T_DiffuserTexture : register(t0);
 SamplerState samplerState : register(s0);
 
 struct MaterialData
@@ -44,16 +44,21 @@ VSOut MainVS(VertexData inVertexData)
     vo.normal = mul(IT_ModelMatrix, inVertexData.normal);
     //float3 positionMS = inVertexData.position.xyz + vo.normal.xyz * sin(color.x);
     float4 positionWS = mul(ModelMatrix, inVertexData.position);
-    // float4 positionVS = mul(ViewMatrix, positionWS);
-    vo.position = float4(positionWS.xyz + vo.normal.xyz * sin(color.x)* 0.2f, 1.0f); //mul(ProjectionMatrix, positionVS);
+    float4 positionVS = mul(ViewMatrix, positionWS);
+    vo.position = mul(ProjectionMatrix, positionVS);
+    // vo.position = float4(positionWS.xyz + vo.normal.xyz * sin(color.x)* 0.2f, 1.0f); //mul(ProjectionMatrix, positionVS);
     vo.positionWS = positionWS;
     vo.texcoord = inVertexData.texcoord;
     return vo;
 }
 
 [maxvertexcount(4)]
-void MainGS(point VSOut inPoint[1], uint inPrimitiveID : SV_PrimitiveID, inout TriangleStream<VSOut> outTriangleStream)
+void MainGS(triangle VSOut inPoint[3], uint inPrimitiveID : SV_PrimitiveID, inout TriangleStream<VSOut> outTriangleStream)
 {
+    outTriangleStream.Append(inPoint[0]);
+    outTriangleStream.Append(inPoint[1]);
+    outTriangleStream.Append(inPoint[2]);
+    /*
     VSOut vo;
     float3 positionWS = inPoint[0].position.xyz;
     float3 N = normalize(inPoint[0].normal.xyz);
@@ -88,6 +93,7 @@ void MainGS(point VSOut inPoint[1], uint inPrimitiveID : SV_PrimitiveID, inout T
     vo.position = mul(ProjectionMatrix, p3VS);
     vo.texcoord = float4(1.0f, 0.0f, 0.0f, 0.0f);
     outTriangleStream.Append(vo);
+    */
 }
 
 float4 MainPS(VSOut inPsInput) : SV_Target
@@ -101,8 +107,9 @@ float4 MainPS(VSOut inPsInput) : SV_Target
     float ambientColorIntensity = 1.0;
     float3 ambientColor = lerp(bottomColor, topColor, theta) * ambientColorIntensity;
 
-    float4 colorFromTexture = tex[0].Sample(samplerState, inPsInput.texcoord.xy);
-    float4 particleColor = tex[1].Sample(samplerState, inPsInput.texcoord.xy);
-    float3 surfaceColor = colorFromTexture.rgb; //mul(colorFromTexture.rgb, particleColor.rgb);
-    return float4(surfaceColor, colorFromTexture.a);
+    // float4 colorFromTexture = tex[0].Sample(samplerState, inPsInput.texcoord.xy);
+    // float4 particleColor = tex[1].Sample(samplerState, inPsInput.texcoord.xy);
+    float4 diffuserColor = T_DiffuserTexture.Sample(samplerState, inPsInput.texcoord.xy);
+    float3 surfaceColor = diffuserColor.rgb; //mul(colorFromTexture.rgb, particleColor.rgb);
+    return float4(surfaceColor, 1.0f);
 }

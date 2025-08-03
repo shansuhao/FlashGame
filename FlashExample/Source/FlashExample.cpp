@@ -47,7 +47,7 @@ int main(int argc, char* argv) {
 		);
 		DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixIdentity();
 		DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 5.f);
-		modelMatrix *= DirectX::XMMatrixRotationZ(90.0f*3.1415926f/180.0f);
+		//modelMatrix *= DirectX::XMMatrixRotationY(90.0f*3.1415926f/180.0f);
 		DirectX::XMFLOAT4X4 tempMatrix;
 		float matrix[64];
 		DirectX::XMStoreFloat4x4(&tempMatrix, projectionMatrix);
@@ -106,7 +106,7 @@ int main(int argc, char* argv) {
 
 		stbi_uc* data = nullptr;
 		int imageWidth, imageHeight, imageChannel;
-		Flash::ReadFile::ReadImage("Resource/Image/Mario.png", &imageWidth, &imageHeight, &imageChannel, &data);
+		Flash::ReadFile::ReadImage("Resource/Image/earth_d.jpg", &imageWidth, &imageHeight, &imageChannel, &data);
 
 		ComPointer<ID3D12Resource> texture;
 		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texture, data, imageWidth * imageHeight * imageChannel, imageWidth, imageHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
@@ -119,7 +119,7 @@ int main(int argc, char* argv) {
 		/*******************************************************************************************************/
 		ID3D12DescriptorHeap* srvHeap = NULL;
 		D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc{};
-		srvHeapDesc.NumDescriptors = 3;
+		srvHeapDesc.NumDescriptors = 2;
 		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		DXContext::Get().GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
@@ -133,8 +133,8 @@ int main(int argc, char* argv) {
 		srvDesc.Texture2D.MipLevels = 1;
 		D3D12_CPU_DESCRIPTOR_HANDLE srvHeapPtr = srvHeap->GetCPUDescriptorHandleForHeapStart();
 		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srvDesc, srvHeapPtr);
-		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		DXContext::Get().GetDevice()->CreateShaderResourceView(texturePartice, &srvDesc, srvHeapPtr);
+		//srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		//DXContext::Get().GetDevice()->CreateShaderResourceView(texturePartice, &srvDesc, srvHeapPtr);
 		/*******************************************************************************************************/
 		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		D3D12_SHADER_RESOURCE_VIEW_DESC sbSRVDesc = {};
@@ -190,14 +190,14 @@ int main(int argc, char* argv) {
 				DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
 				DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, sb->GetGPUVirtualAddress());
 
-				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
-				D3D12_VERTEX_BUFFER_VIEW vbos[] = {
-					staticMesh.m_VBOView
-				};
-				DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
-				DXContext::Get().GetCommandList()->DrawInstanced(staticMesh.m_VertexCount, 1, 0, 0);
+				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				//D3D12_VERTEX_BUFFER_VIEW vbos[] = {
+				//	staticMesh.m_VBOView
+				//};
+				//DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
+				//DXContext::Get().GetCommandList()->DrawInstanced(staticMesh.m_VertexCount, 1, 0, 0);
 
-				//staticMesh.Render();
+				staticMesh.Render();
 			}
 
 			DXContext::Get().EndFrame();

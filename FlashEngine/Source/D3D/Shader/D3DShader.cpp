@@ -32,7 +32,7 @@ bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComP
 	psoDesc.SampleDesc.Quality = 0;
 	psoDesc.SampleMask = 0xffffffff;
 	psoDesc.InputLayout = vertexLayoutDesc;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
 	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
@@ -44,7 +44,7 @@ bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComP
 
 	psoDesc.BlendState = {0};
 	D3D12_RENDER_TARGET_BLEND_DESC rtBlendDesc = {
-		TRUE, FALSE, 
+		FALSE, FALSE,
 		D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_INV_SRC_ALPHA, D3D12_BLEND_OP_ADD,
 		D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_INV_SRC_ALPHA, D3D12_BLEND_OP_ADD,
 		D3D12_LOGIC_OP_NOOP,
@@ -258,7 +258,7 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	descRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descRange[0].RegisterSpace = 0;
 	descRange[0].BaseShaderRegister = 0;  //t0
-	descRange[0].NumDescriptors = 2;
+	descRange[0].NumDescriptors = 1;
 	descRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	rootParameter[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;

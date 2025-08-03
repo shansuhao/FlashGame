@@ -7,6 +7,7 @@ void Flash::ReadFile::ReadImage(const char* p_fileName, int* p_ImageWidth, int* 
 	fopen_s(&pFile, p_fileName, "rb");
 	if (pFile != nullptr)
 	{
+		//stbi_set_flip_vertically_on_load(true);
 		*data = stbi_load_from_file(pFile, p_ImageWidth, p_ImageHeight, p_imageChannel, 4);
 		fclose(pFile);
 	}
