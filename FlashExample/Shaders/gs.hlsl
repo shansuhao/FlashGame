@@ -11,7 +11,6 @@ struct VSOut
     float4 position : SV_Position;
     float4 normal : NORMAL;
     float4 texcoord : TEXCOORD0;
-    float4 positionWS : TEXCOORD1;
 };
 
 static const float PI = 3.141592f;
@@ -41,13 +40,8 @@ cbuffer DefaultVertexCB : register(b1)
 VSOut MainVS(VertexData inVertexData)
 {
     VSOut vo;
-    vo.normal = mul(IT_ModelMatrix, inVertexData.normal);
-    //float3 positionMS = inVertexData.position.xyz + vo.normal.xyz * sin(color.x);
-    float4 positionWS = mul(ModelMatrix, inVertexData.position);
-    float4 positionVS = mul(ViewMatrix, positionWS);
-    vo.position = mul(ProjectionMatrix, positionVS);
-    // vo.position = float4(positionWS.xyz + vo.normal.xyz * sin(color.x)* 0.2f, 1.0f); //mul(ProjectionMatrix, positionVS);
-    vo.positionWS = positionWS;
+    vo.normal = mul(IT_ModelMatrix, inVertexData.normal);;
+    vo.position = mul(ModelMatrix, inVertexData.position);
     vo.texcoord = inVertexData.texcoord;
     return vo;
 }
@@ -55,45 +49,31 @@ VSOut MainVS(VertexData inVertexData)
 [maxvertexcount(4)]
 void MainGS(triangle VSOut inPoint[3], uint inPrimitiveID : SV_PrimitiveID, inout TriangleStream<VSOut> outTriangleStream)
 {
-    outTriangleStream.Append(inPoint[0]);
-    outTriangleStream.Append(inPoint[1]);
-    outTriangleStream.Append(inPoint[2]);
-    /*
-    VSOut vo;
-    float3 positionWS = inPoint[0].position.xyz;
-    float3 N = normalize(inPoint[0].normal.xyz);
-    vo.normal = float4(N, 0.0f);
-    float3 helperVec = abs(N.y) > 0.999 ? float3(0.0f, 0.0f, 1.0f) : float3(0.0f, 1.0f, 0.0f);
-    float3 tangent = normalize(cross(N, helperVec));
-    float3 bitangent = normalize(cross(tangent, N));
+    float3 N = normalize(inPoint[0].normal.xyz + inPoint[1].normal.xyz + inPoint[2].normal.xyz);
     float scale = materialData[inPrimitiveID].r;
+    float3 offset = N * abs(sin(color.x * 2.0f)) * 0.2f;
     
-    vo.positionWS = float4(positionWS.xyz, 1.0f);
-    
-    float3 p0WS = positionWS - (bitangent * 0.5f - tangent * 0.5f) * scale; //left bottom
-    float4 p0VS = mul(ViewMatrix, float4(p0WS, 1.0f));
-    vo.position = mul(ProjectionMatrix, p0VS);
-    vo.texcoord = float4(0.0f, 1.0f, 0.0f, 0.0f);
+    VSOut vo;
+    float4 positionWS = float4(inPoint[0].position.xyz + offset, 1.0f);
+    float4 positionVS = mul(ViewMatrix, positionWS);
+    vo.position = mul(ProjectionMatrix, positionVS);
+    vo.normal = inPoint[0].normal;
+    vo.texcoord = inPoint[0].texcoord;
     outTriangleStream.Append(vo);
     
-    float3 p1WS = positionWS - (bitangent * 0.5f + tangent * 0.5f) * scale; //right bottom
-    float4 p1VS = mul(ViewMatrix, float4(p1WS, 1.0f));
-    vo.position = mul(ProjectionMatrix, p1VS);
-    vo.texcoord = float4(1.0f, 1.0f, 0.0f, 0.0f);
+    positionWS = float4(inPoint[1].position.xyz + offset, 1.0f);
+    positionVS = mul(ViewMatrix, positionWS);
+    vo.position = mul(ProjectionMatrix, positionVS);
+    vo.normal = inPoint[1].normal;
+    vo.texcoord = inPoint[1].texcoord;
     outTriangleStream.Append(vo);
-
-    float3 p2WS = positionWS + (bitangent * 0.5f + tangent * 0.5f) * scale; //left top
-    float4 p2VS = mul(ViewMatrix, float4(p2WS, 1.0f));
-    vo.position = mul(ProjectionMatrix, p2VS);
-    vo.texcoord = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    
+    positionWS = float4(inPoint[2].position.xyz + offset, 1.0f);
+    positionVS = mul(ViewMatrix, positionWS);
+    vo.position = mul(ProjectionMatrix, positionVS);
+    vo.normal = inPoint[2].normal;
+    vo.texcoord = inPoint[2].texcoord;
     outTriangleStream.Append(vo);
-
-    float3 p3WS = positionWS + (bitangent * 0.5f - tangent * 0.5f) * scale; //right top
-    float4 p3VS = mul(ViewMatrix, float4(p3WS, 1.0f));
-    vo.position = mul(ProjectionMatrix, p3VS);
-    vo.texcoord = float4(1.0f, 0.0f, 0.0f, 0.0f);
-    outTriangleStream.Append(vo);
-    */
 }
 
 float4 MainPS(VSOut inPsInput) : SV_Target

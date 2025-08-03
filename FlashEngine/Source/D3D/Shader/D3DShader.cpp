@@ -244,7 +244,7 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 {
 	D3D12_ROOT_PARAMETER rootParameter[4] = {};
 	rootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-	rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParameter[0].Constants.RegisterSpace = 0;
 	rootParameter[0].Constants.ShaderRegister = 0;
 	rootParameter[0].Constants.Num32BitValues = 4;
