@@ -20,7 +20,7 @@ cbuffer globalConstants : register(b0)
     float color;
 };
 
-Texture2D tex : register(t0);
+Texture2D tex[2] : register(t0);
 SamplerState samplerState : register(s0);
 
 cbuffer DefaultVertexCB : register(b1)
@@ -95,7 +95,8 @@ float4 MainPS(VSOut inPsInput) : SV_Target
     float ambientColorIntensity = 1.0;
     float3 ambientColor = lerp(bottomColor, topColor, theta) * ambientColorIntensity;
 
-    float4 colorFromTexture = tex.Sample(samplerState, inPsInput.texcoord.xy);
-    float3 surfaceColor = colorFromTexture.rgb;
+    float4 colorFromTexture = tex[0].Sample(samplerState, inPsInput.texcoord.xy);
+    float4 particleColor = tex[1].Sample(samplerState, inPsInput.texcoord.xy);
+    float3 surfaceColor = colorFromTexture.rgb; //mul(colorFromTexture.rgb, particleColor.rgb);
     return float4(surfaceColor, colorFromTexture.a);
 }

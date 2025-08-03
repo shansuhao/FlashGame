@@ -4,6 +4,6 @@
 
 namespace Flash {
 	namespace ReadFile {
-		void ReadImage(const char* p_fileName, int* p_ImageWidth, int* p_ImageHeight, stbi_uc** data);
+		void ReadImage(const char* p_fileName, int* p_ImageWidth, int* p_ImageHeight, int* p_imageChannel, stbi_uc** data);
 	}
 }

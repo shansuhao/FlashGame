@@ -65,8 +65,8 @@ int main(int argc, char* argv) {
 		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 64);
 
 		// Éú³ÉÍ¼Æ¬
-		/*unsigned char* p_Data = new unsigned char[256 * 256 * 4];
-		memset(p_Data, 0, 256 * 256 * 4);
+		unsigned char* particlePixels = new unsigned char[256 * 256 * 4];
+		memset(particlePixels, 0, 256 * 256 * 4);
 		for (size_t y = 0; y < 256; y++)
 		{
 			for (size_t x = 0; x < 256; x++)
@@ -82,35 +82,47 @@ int main(int argc, char* argv) {
 					alpha = powf(alpha, 2.0f);
 
 					int pixelIndex = y * 256 + x;
-					p_Data[pixelIndex * 4] = 255;
-					p_Data[pixelIndex * 4 + 1] = 255;
-					p_Data[pixelIndex * 4 + 2] = 255;
-					p_Data[pixelIndex * 4 + 3] = unsigned char(alpha * 255);
+					particlePixels[pixelIndex * 4] = 255;
+					particlePixels[pixelIndex * 4 + 1] = 255;
+					particlePixels[pixelIndex * 4 + 2] = 255;
+					particlePixels[pixelIndex * 4 + 3] = unsigned char(alpha * 255);
 				}
 			}
-		}*/
+		}
 
 		stbi_uc* data = nullptr;
-		int imageWidth, imageHeight;
-		Flash::ReadFile::ReadImage("Resource/Image/Mario.png", &imageWidth, &imageHeight, &data);
+		int imageWidth, imageHeight, imageChannel;
+		Flash::ReadFile::ReadImage("Resource/Image/Mario.png", &imageWidth, &imageHeight, &imageChannel, &data);
 
 		ComPointer<ID3D12Resource> texture;
-		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texture, data, 256 * 256 * 4, 256 ,256, DXGI_FORMAT_R8G8B8A8_UNORM);
+		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texture, data, imageWidth * imageHeight * imageChannel, imageWidth, imageHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
 
+		ComPointer<ID3D12Resource> texturePartice;
+		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texturePartice, particlePixels, 256 * 256 * 4, 256, 256, DXGI_FORMAT_R8G8B8A8_UNORM);
+		delete[] particlePixels;
+		delete data;
+
+		/*******************************************************************************************************/
 		ID3D12DescriptorHeap* srvHeap = NULL;
 		D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc{};
-		srvHeapDesc.NumDescriptors = 1;
+		srvHeapDesc.NumDescriptors = 2;
 		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		DXContext::Get().GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { srvHeap };
+
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
-		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, nullptr, srvHeap->GetCPUDescriptorHandleForHeapStart());
+		D3D12_CPU_DESCRIPTOR_HANDLE srvHeapPtr = srvHeap->GetCPUDescriptorHandleForHeapStart();
+		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srvDesc, srvHeapPtr);
+		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		DXContext::Get().GetDevice()->CreateShaderResourceView(texturePartice, &srvDesc, srvHeapPtr);
+		/*******************************************************************************************************/
+
 
 		DXContext::Get().ExeuteCommandList();
 		

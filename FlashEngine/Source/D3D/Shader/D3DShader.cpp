@@ -258,7 +258,7 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	descRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descRange[0].RegisterSpace = 0;
 	descRange[0].BaseShaderRegister = 0;
-	descRange[0].NumDescriptors = 1;
+	descRange[0].NumDescriptors = 2;
 	descRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	rootParameter[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
