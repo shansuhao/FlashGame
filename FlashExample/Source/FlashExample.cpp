@@ -62,6 +62,7 @@ int main(int argc, char* argv) {
 			memcpy(matrix + 48, &tempMatrix, sizeof(float) * 16);
 		}
 		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 64);
+
 		ComPointer<ID3D12Resource> texture;
 		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texture);
 

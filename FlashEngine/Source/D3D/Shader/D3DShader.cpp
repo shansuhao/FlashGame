@@ -36,7 +36,7 @@ bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComP
 
 	psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
-	psoDesc.RasterizerState.DepthClipEnable = true;
+	psoDesc.RasterizerState.DepthClipEnable = TRUE;
 
 	psoDesc.DepthStencilState.DepthEnable = true;
 	psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
@@ -44,9 +44,9 @@ bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComP
 
 	psoDesc.BlendState = {0};
 	D3D12_RENDER_TARGET_BLEND_DESC rtBlendDesc = {
-		FALSE, FALSE, 
-		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-		D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+		TRUE, FALSE, 
+		D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_INV_SRC_ALPHA, D3D12_BLEND_OP_ADD,
+		D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_INV_SRC_ALPHA, D3D12_BLEND_OP_ADD,
 		D3D12_LOGIC_OP_NOOP,
 		D3D12_COLOR_WRITE_ENABLE_ALL
 	};
@@ -389,10 +389,15 @@ bool D3DShader::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture)
 		for (size_t x = 0; x < 256; x++)
 		{
 			float radiusSqrt = float((x-128) * (x-128) + (y-128) * (y - 128));
-			if (radiusSqrt > 128 * 128)
+			if (radiusSqrt <= 128 * 128)
 			{
 				float radius = sqrtf(radiusSqrt);
 				float alpha = radius / 128.0f;
+				
+				alpha = alpha > 1.0f ? 1.0f : alpha;
+				alpha = 1.0f - alpha;
+				alpha = powf(alpha, 2.0f);
+
 				int pixelIndex = y * 256 + x;
 				p_Data[pixelIndex * 4] = 255;
 				p_Data[pixelIndex * 4 + 1] = 255;

@@ -73,6 +73,7 @@ private:
 
 	ComPointer<ID3D12DescriptorHeap> m_rtvDescHeap;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandles[FrameCount];
+
 	ComPointer<ID3D12DescriptorHeap> m_dsvDescHeap;
 
 	FVector4d m_backGroundColor{ 0.0f,0.0f,0.0f,1.f };

@@ -144,7 +144,7 @@ bool DXContext::CreateDepthSource()
 	d3d12_Resource_desc.Width = DXWindow::Get().GetWidth();
 	d3d12_Resource_desc.Height = DXWindow::Get().GetHeight();
 	d3d12_Resource_desc.DepthOrArraySize = 1;
-	d3d12_Resource_desc.MipLevels = 0;
+	d3d12_Resource_desc.MipLevels = 1;
 	d3d12_Resource_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 	d3d12_Resource_desc.SampleDesc.Count = 1;
 	d3d12_Resource_desc.SampleDesc.Quality = 0;
@@ -188,11 +188,6 @@ void DXContext::CreateDSVHeap()
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 
 	m_d3dDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvDescHeap));
-
-	D3D12_DEPTH_STENCIL_VIEW_DESC d3d_ds_view_desc{};
-	d3d_ds_view_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	d3d_ds_view_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	m_d3dDevice->CreateDepthStencilView(m_d3d_ds_resoucre, &d3d_ds_view_desc, m_dsvDescHeap->GetCPUDescriptorHandleForHeapStart());
 }
 
 bool DXContext::GetBuffers()
@@ -207,6 +202,11 @@ bool DXContext::GetBuffers()
 		//m_d3dDevice->CreateRenderTargetView(m_buffers[i], &rtv, m_rtvHandles[i]);
 		m_d3dDevice->CreateRenderTargetView(m_buffers[i], NULL, m_rtvHandles[i]);
 	}
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC d3d_ds_view_desc{};
+	d3d_ds_view_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3d_ds_view_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	m_d3dDevice->CreateDepthStencilView(m_d3d_ds_resoucre, &d3d_ds_view_desc, m_dsvDescHeap->GetCPUDescriptorHandleForHeapStart());
 	return true;
 }
 

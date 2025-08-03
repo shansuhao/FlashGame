@@ -48,41 +48,39 @@ VSOut MainVS(VertexData inVertexData)
 [maxvertexcount(4)]
 void MainGS(point VSOut inPoint[1], uint inPrimitiveId:SV_PrimitiveID, inout TriangleStream<VSOut> outTriangleStream)
 {
+    VSOut vo;
     float3 positionWS = inPoint[0].position.xyz;
-    
     float3 N = normalize(inPoint[0].normal.xyz);
+    vo.normal = float4(N, 0.0f);
     float3 helperVec = abs(N.y) > 0.999 ? float3(0.0f, 0.0f, 1.0f) : float3(0.0f, 1.0f, 0.0f);
     float3 tangent = normalize(cross(N, helperVec));
     float3 bitangent = normalize(cross(tangent, N));
     float scale = 0.1f;
     
-    VSOut vo;
-    vo.positionWS = inPoint[0].positionWS;
-    vo.texcoord = inPoint[0].texcoord;
-    vo.normal = float4(N, 1.0f);
+    vo.positionWS = float4(positionWS.xyz, 1.0f);
     
-    float3 p0WS = positionWS.xyz + (bitangent * (-0.5f) + tangent * (-0.5f)) * 0.1f; //left bottom
-    float4 p0VS = mul(ViewMatrix, float4(p0WS.xyz, 1.0f));
+    float3 p0WS = positionWS - (bitangent * 0.5f - tangent * 0.5f) * 0.1f; //left bottom
+    float4 p0VS = mul(ViewMatrix, float4(p0WS, 1.0f));
     vo.position = mul(ProjectionMatrix, p0VS);
-    vo.texcoord = float4(1.0f, 1.0f, 0.0f, 0.0f);
-    outTriangleStream.Append(vo);
-    
-    float3 p1WS = positionWS.xyz + (bitangent * (0.5f) + tangent * (-0.5f)) * 0.1f;
-    float4 p1VS = mul(ViewMatrix, float4(p1WS.xyz, 1.0f));
-    vo.position = mul(ProjectionMatrix, p1VS);
-    vo.texcoord = float4(1.0f, 0.0f, 0.0f, 0.0f);
-    outTriangleStream.Append(vo);
-    
-    float3 p2WS = positionWS.xyz + (bitangent * (-0.5f) + tangent * (0.5f)) * 0.1f;
-    float4 p2VS = mul(ViewMatrix, float4(p2WS.xyz, 1.0f));
-    vo.position = mul(ProjectionMatrix, p2VS);
     vo.texcoord = float4(0.0f, 1.0f, 0.0f, 0.0f);
     outTriangleStream.Append(vo);
     
-    float3 p3WS = positionWS.xyz + (bitangent * (0.5f) + tangent * (0.5f)) * 0.1f;
-    float4 p3VS = mul(ViewMatrix, float4(p3WS.xyz, 1.0f));
+    float3 p1WS = positionWS - (bitangent * 0.5f + tangent * 0.5f) * 0.1f; //right bottom
+    float4 p1VS = mul(ViewMatrix, float4(p1WS, 1.0f));
+    vo.position = mul(ProjectionMatrix, p1VS);
+    vo.texcoord = float4(1.0f, 1.0f, 0.0f, 0.0f);
+    outTriangleStream.Append(vo);
+
+    float3 p2WS = positionWS + (bitangent * 0.5f + tangent * 0.5f) * 0.1f; //left top
+    float4 p2VS = mul(ViewMatrix, float4(p2WS, 1.0f));
+    vo.position = mul(ProjectionMatrix, p2VS);
+    vo.texcoord = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    outTriangleStream.Append(vo);
+
+    float3 p3WS = positionWS + (bitangent * 0.5f - tangent * 0.5f) * 0.1f; //right top
+    float4 p3VS = mul(ViewMatrix, float4(p3WS, 1.0f));
     vo.position = mul(ProjectionMatrix, p3VS);
-    vo.texcoord = float4(0.0f,0.0f,0.0f,0.0f);
+    vo.texcoord = float4(1.0f, 0.0f, 0.0f, 0.0f);
     outTriangleStream.Append(vo);
 }
 
@@ -113,7 +111,7 @@ float4 MainPS(VSOut inPsInput) : SV_Target
     }
     float3 surfaceColor = ambientColor + diffuseColor + specularColor;
 */
-    
-    float3 surfaceColor = ambientColor + tex.Sample(samplerState, inPsInput.texcoord.xy);
-    return float4(surfaceColor, 1.0f);
+    float4 colorFromTexture = tex.Sample(samplerState, inPsInput.texcoord.xy);
+    float3 surfaceColor = ambientColor + colorFromTexture.rgb;
+    return float4(surfaceColor, colorFromTexture.a);
 }
