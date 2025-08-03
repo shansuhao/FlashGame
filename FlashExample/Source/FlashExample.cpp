@@ -2,6 +2,7 @@
 #include "Utils/ReadFile.h"
 #include "D3D/Shader/D3DShader.h"
 #include "D3D/Mesh/StaticMeshComponent.h"
+#include <Utils/Utils.h>
 
 int main(int argc, char* argv) {
 
@@ -21,9 +22,9 @@ int main(int argc, char* argv) {
 		//D3DShader::Get().InitShaderFile(L"VertexShader.cso", &t_vs);
 		//D3DShader::Get().InitShaderFile(L"PixelShader.cso", &t_ps);
 		//D3DShader::Get().InitShaderFile(L"RootSignature.cso", &t_RootSignature); 
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainVS", "vs_5_0", &t_vs);
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainGS", "gs_5_0", &t_gs);
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainPS", "ps_5_0", &t_ps);
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainVS", "vs_5_1", &t_vs);
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainGS", "gs_5_1", &t_gs);
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainPS", "ps_5_1", &t_ps);
 
 		BOOL p_IsInitShader_Success = false;
 
@@ -38,6 +39,7 @@ int main(int argc, char* argv) {
 		);
 
 		p_IsInitShader_Success = D3DShader::Get().CreateConstantBufferOBject(staticMesh.m_CB, 65536);
+
 		DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
 			(45.0f * 3.1415926f) / 180.0f,
 			((float)DXWindow::Get().GetWidth() / (float)DXWindow::Get().GetHeight()),
@@ -63,6 +65,18 @@ int main(int argc, char* argv) {
 			memcpy(matrix + 48, &tempMatrix, sizeof(float) * 16);
 		}
 		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 64);
+
+		ComPointer<ID3D12Resource> sb;
+		p_IsInitShader_Success = D3DShader::Get().CreateConstantBufferOBject(sb, 65536);
+		struct MaterialData {
+			float r;
+		};
+		MaterialData* materialDatas = new MaterialData[3000];
+		for (int i = 0; i < 3000; i++)
+		{
+			materialDatas[i].r = srandom() * 0.1f + 0.1f;
+		}
+		D3DShader::Get().UpdateConstantBuffer(sb, materialDatas, sizeof(MaterialData) * 3000);
 
 		// Éú³ÉÍ¼Æ¬
 		unsigned char* particlePixels = new unsigned char[256 * 256 * 4];
@@ -105,7 +119,7 @@ int main(int argc, char* argv) {
 		/*******************************************************************************************************/
 		ID3D12DescriptorHeap* srvHeap = NULL;
 		D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc{};
-		srvHeapDesc.NumDescriptors = 2;
+		srvHeapDesc.NumDescriptors = 3;
 		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		DXContext::Get().GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
@@ -121,6 +135,17 @@ int main(int argc, char* argv) {
 		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srvDesc, srvHeapPtr);
 		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		DXContext::Get().GetDevice()->CreateShaderResourceView(texturePartice, &srvDesc, srvHeapPtr);
+		/*******************************************************************************************************/
+		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		D3D12_SHADER_RESOURCE_VIEW_DESC sbSRVDesc = {};
+		sbSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		sbSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+		sbSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		sbSRVDesc.Buffer.FirstElement = 0;
+		sbSRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		sbSRVDesc.Buffer.NumElements = 3000;
+		sbSRVDesc.Buffer.StructureByteStride = sizeof(MaterialData);
+		DXContext::Get().GetDevice()->CreateShaderResourceView(sb, &sbSRVDesc, srvHeapPtr);
 		/*******************************************************************************************************/
 
 
@@ -159,9 +184,12 @@ int main(int argc, char* argv) {
 				DXContext::Get().GetCommandList()->SetPipelineState(m_PipeState);
 				DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
 				DXContext::Get().GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-				DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh.m_CB->GetGPUVirtualAddress());
+
 				DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 4, color, 0);
+				DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh.m_CB->GetGPUVirtualAddress());
 				DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
+				DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, sb->GetGPUVirtualAddress());
+
 				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
 				D3D12_VERTEX_BUFFER_VIEW vbos[] = {
 					staticMesh.m_VBOView

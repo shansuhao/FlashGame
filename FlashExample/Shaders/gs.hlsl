@@ -23,6 +23,12 @@ cbuffer globalConstants : register(b0)
 Texture2D tex[2] : register(t0);
 SamplerState samplerState : register(s0);
 
+struct MaterialData
+{
+    float r;
+};
+StructuredBuffer<MaterialData> materialData : register(t0, space1);
+
 cbuffer DefaultVertexCB : register(b1)
 {
     float4x4 ProjectionMatrix;
@@ -46,7 +52,7 @@ VSOut MainVS(VertexData inVertexData)
 }
 
 [maxvertexcount(4)]
-void MainGS(point VSOut inPoint[1], uint inPrimitiveId:SV_PrimitiveID, inout TriangleStream<VSOut> outTriangleStream)
+void MainGS(point VSOut inPoint[1], uint inPrimitiveID : SV_PrimitiveID, inout TriangleStream<VSOut> outTriangleStream)
 {
     VSOut vo;
     float3 positionWS = inPoint[0].position.xyz;
@@ -55,29 +61,29 @@ void MainGS(point VSOut inPoint[1], uint inPrimitiveId:SV_PrimitiveID, inout Tri
     float3 helperVec = abs(N.y) > 0.999 ? float3(0.0f, 0.0f, 1.0f) : float3(0.0f, 1.0f, 0.0f);
     float3 tangent = normalize(cross(N, helperVec));
     float3 bitangent = normalize(cross(tangent, N));
-    float scale = 0.1f;
+    float scale = materialData[inPrimitiveID].r;
     
     vo.positionWS = float4(positionWS.xyz, 1.0f);
     
-    float3 p0WS = positionWS - (bitangent * 0.5f - tangent * 0.5f) * 0.1f; //left bottom
+    float3 p0WS = positionWS - (bitangent * 0.5f - tangent * 0.5f) * scale; //left bottom
     float4 p0VS = mul(ViewMatrix, float4(p0WS, 1.0f));
     vo.position = mul(ProjectionMatrix, p0VS);
     vo.texcoord = float4(0.0f, 1.0f, 0.0f, 0.0f);
     outTriangleStream.Append(vo);
     
-    float3 p1WS = positionWS - (bitangent * 0.5f + tangent * 0.5f) * 0.1f; //right bottom
+    float3 p1WS = positionWS - (bitangent * 0.5f + tangent * 0.5f) * scale; //right bottom
     float4 p1VS = mul(ViewMatrix, float4(p1WS, 1.0f));
     vo.position = mul(ProjectionMatrix, p1VS);
     vo.texcoord = float4(1.0f, 1.0f, 0.0f, 0.0f);
     outTriangleStream.Append(vo);
 
-    float3 p2WS = positionWS + (bitangent * 0.5f + tangent * 0.5f) * 0.1f; //left top
+    float3 p2WS = positionWS + (bitangent * 0.5f + tangent * 0.5f) * scale; //left top
     float4 p2VS = mul(ViewMatrix, float4(p2WS, 1.0f));
     vo.position = mul(ProjectionMatrix, p2VS);
     vo.texcoord = float4(0.0f, 0.0f, 0.0f, 0.0f);
     outTriangleStream.Append(vo);
 
-    float3 p3WS = positionWS + (bitangent * 0.5f - tangent * 0.5f) * 0.1f; //right top
+    float3 p3WS = positionWS + (bitangent * 0.5f - tangent * 0.5f) * scale; //right top
     float4 p3VS = mul(ViewMatrix, float4(p3WS, 1.0f));
     vo.position = mul(ProjectionMatrix, p3VS);
     vo.texcoord = float4(1.0f, 0.0f, 0.0f, 0.0f);

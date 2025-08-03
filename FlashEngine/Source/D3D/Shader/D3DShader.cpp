@@ -242,7 +242,7 @@ void D3DShader::InitShaderFile(LPCTSTR p_ShaderFilePath, D3D12_SHADER_BYTECODE* 
 
 bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignature)
 {
-	D3D12_ROOT_PARAMETER rootParameter[3] = {};
+	D3D12_ROOT_PARAMETER rootParameter[4] = {};
 	rootParameter[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
 	rootParameter[0].Constants.RegisterSpace = 0;
@@ -257,7 +257,7 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	D3D12_DESCRIPTOR_RANGE descRange[1] = {};
 	descRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descRange[0].RegisterSpace = 0;
-	descRange[0].BaseShaderRegister = 0;
+	descRange[0].BaseShaderRegister = 0;  //t0
 	descRange[0].NumDescriptors = 2;
 	descRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
@@ -265,6 +265,11 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	rootParameter[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	rootParameter[2].DescriptorTable.pDescriptorRanges = descRange;
 	rootParameter[2].DescriptorTable.NumDescriptorRanges = _countof(descRange);
+
+	rootParameter[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+	rootParameter[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParameter[3].Descriptor.RegisterSpace = 1;
+	rootParameter[3].Descriptor.ShaderRegister = 0;
 
 	D3D12_STATIC_SAMPLER_DESC samplerDesc[1] = {};
 	memset(samplerDesc,0, sizeof(D3D12_STATIC_SAMPLER_DESC)*_countof(samplerDesc));
