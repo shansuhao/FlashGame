@@ -138,9 +138,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Login.cpp" />
     <ClCompile Include="Source\FlashUI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Login.h" />
     <ClInclude Include="Source\FlashUI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

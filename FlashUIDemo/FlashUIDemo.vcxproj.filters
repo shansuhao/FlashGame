@@ -18,9 +18,15 @@
     <ClCompile Include="Source\FlashUI.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Login.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\FlashUI.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Login.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
