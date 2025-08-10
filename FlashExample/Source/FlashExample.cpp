@@ -12,8 +12,11 @@ int main(int argc, char* argv) {
 
 	if (DXWindow::Get().Init(WND_CLASS_NAME, WND_CLASS_NAME, IDI_ICON1, WND_WIDTH, WND_HEIGHT) && DXContext::Get().Init())
 	{
-		StaticMeshComponent staticMesh;
+		DXWindow::Get().SetFullscreen(true);
 
+		BOOL p_IsInitShader_Success = false;
+		
+		StaticMeshComponent staticMesh;
 		D3D12_SHADER_BYTECODE t_vs = {};
 		D3D12_SHADER_BYTECODE t_ps = {};
 		D3D12_SHADER_BYTECODE t_gs = {};
@@ -22,29 +25,22 @@ int main(int argc, char* argv) {
 		//D3DShader::Get().InitShaderFile(L"VertexShader.cso", &t_vs);
 		//D3DShader::Get().InitShaderFile(L"PixelShader.cso", &t_ps);
 		//D3DShader::Get().InitShaderFile(L"RootSignature.cso", &t_RootSignature); 
+
 		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainVS", "vs_5_1", &t_vs);
 		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainGS", "gs_5_1", &t_gs);
 		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainPS", "ps_5_1", &t_ps);
-
-		BOOL p_IsInitShader_Success = false;
-
 		ComPointer<ID3D12PipelineState> m_PipeState;
 		ComPointer<ID3D12RootSignature> m_RootSignature;
 
-		DXContext::Get().InitCommandList();
+		//DXContext::Get().InitCommandList();
 		p_IsInitShader_Success = staticMesh.InitFromFile("Resource/Model/Sphere.lhsm");
-
 		p_IsInitShader_Success = D3DShader::Get().InitShader(
 			m_RootSignature, m_PipeState, t_vs, t_ps, t_gs, false, t_RootSignature
 		);
-
 		p_IsInitShader_Success = D3DShader::Get().CreateConstantBufferOBject(staticMesh.m_CB, 65536);
 
 		DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
-			(45.0f * 3.1415926f) / 180.0f,
-			((float)DXWindow::Get().GetWidth() / (float)DXWindow::Get().GetHeight()),
-			0.1f, 1000.0f
-		);
+			(45.0f * 3.141592f) / 180.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
 		DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixIdentity();
 		DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 5.f);
 		//modelMatrix *= DirectX::XMMatrixRotationY(90.0f*3.1415926f/180.0f);
@@ -90,11 +86,9 @@ int main(int argc, char* argv) {
 				{
 					float radius = sqrtf(radiusSqrt);
 					float alpha = radius / 128.0f;
-
 					alpha = alpha > 1.0f ? 1.0f : alpha;
 					alpha = 1.0f - alpha;
 					alpha = powf(alpha, 2.0f);
-
 					int pixelIndex = y * 256 + x;
 					particlePixels[pixelIndex * 4] = 255;
 					particlePixels[pixelIndex * 4 + 1] = 255;
@@ -106,12 +100,9 @@ int main(int argc, char* argv) {
 
 		stbi_uc* data = nullptr;
 		int imageWidth, imageHeight, imageChannel;
+		ComPointer<ID3D12Resource> texture, texturePartice;
 		Flash::ReadFile::ReadImage("Resource/Image/earth_d.jpg", &imageWidth, &imageHeight, &imageChannel, &data);
-
-		ComPointer<ID3D12Resource> texture;
 		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texture, data, imageWidth * imageHeight * imageChannel, imageWidth, imageHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
-
-		ComPointer<ID3D12Resource> texturePartice;
 		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texturePartice, particlePixels, 256 * 256 * 4, 256, 256, DXGI_FORMAT_R8G8B8A8_UNORM);
 		delete[] particlePixels;
 		delete data;
@@ -126,17 +117,18 @@ int main(int argc, char* argv) {
 
 		ID3D12DescriptorHeap* descriptorHeaps[] = { srvHeap };
 
+		/*******************************************************************************************************/
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
 		D3D12_CPU_DESCRIPTOR_HANDLE srvHeapPtr = srvHeap->GetCPUDescriptorHandleForHeapStart();
-		DXContext::Get().GetDevice()->CreateShaderResourceView(texture, &srvDesc, srvHeapPtr);
+		DXContext::Get().GetDevice()->CreateShaderResourceView(texture.Get(), &srvDesc, srvHeapPtr);
+
 		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		DXContext::Get().GetDevice()->CreateShaderResourceView(texturePartice, &srvDesc, srvHeapPtr);
+		DXContext::Get().GetDevice()->CreateShaderResourceView(texturePartice.Get(), &srvDesc, srvHeapPtr);
 		/*******************************************************************************************************/
-		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		D3D12_SHADER_RESOURCE_VIEW_DESC sbSRVDesc = {};
 		sbSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		sbSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -145,64 +137,69 @@ int main(int argc, char* argv) {
 		sbSRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 		sbSRVDesc.Buffer.NumElements = 3000;
 		sbSRVDesc.Buffer.StructureByteStride = sizeof(MaterialData);
-		DXContext::Get().GetDevice()->CreateShaderResourceView(sb, &sbSRVDesc, srvHeapPtr);
+
+		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		DXContext::Get().GetDevice()->CreateShaderResourceView(sb.Get(), &sbSRVDesc, srvHeapPtr);
 		/*******************************************************************************************************/
 
-
 		DXContext::Get().ExeuteCommandList();
+
+		ShowWindow(DXWindow::Get().GetHWND(), SW_SHOWDEFAULT);
+		UpdateWindow(DXWindow::Get().GetHWND());
 		
 		float color[] = {0.5f, 0.5f, 0.5f, 1.f};
-
 		DWORD last_time = timeGetTime();
 		DWORD appStartTime = last_time;
-		DXWindow::Get().SetFullscreen(true);
+
 		while (!DXWindow::Get().ShouldClose())
 		{
-			DXWindow::Get().UpdateWindow();
+			if (!DXWindow::Get().UpdateWindow()){
+				DWORD current_time = timeGetTime();
+				DWORD frameTime = current_time - last_time;
+				DWORD timeSinceAppStartInMS = current_time - appStartTime;
+				last_time = current_time;
+				float deltaTimeInSecond = float(frameTime) / 1000.0f;
+				float timeSinceAppStartInSecond = float(timeSinceAppStartInMS) / 1000.0f;
+				color[0] = timeSinceAppStartInSecond;
 
-			DWORD current_time = timeGetTime();
-			DWORD frameTime = current_time - last_time;
-			DWORD timeSinceAppStartInMS = current_time - appStartTime;
-			last_time = current_time;
-			float deltaTimeInSecond = float(frameTime) / 1000.0f;
-			float timeSinceAppStartInSecond = float(timeSinceAppStartInMS) / 1000.0f;
+				if (DXWindow::Get().ShouldResize())
+				{
+					DXContext::Get().Flush();
+					DXWindow::Get().Resize();
+				}
 
-			color[0] = timeSinceAppStartInSecond;
+				// 对窗口进行渲染
+				DXContext::Get().InitCommandList();
+				DXContext::Get().DrawFrame();
 
-			if (DXWindow::Get().ShouldResize())
-			{
-				DXContext::Get().Flush();
-				DXWindow::Get().Resize();
+				// 渲染三角形
+				if (p_IsInitShader_Success)
+				{
+
+
+
+					DXContext::Get().GetCommandList()->SetPipelineState(m_PipeState);
+					DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
+					DXContext::Get().GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+					DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 4, color, 0);
+					DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh.m_CB->GetGPUVirtualAddress());
+					DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
+					DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, sb->GetGPUVirtualAddress());
+					DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+					//D3D12_VERTEX_BUFFER_VIEW vbos[] = {
+					//	staticMesh.m_VBOView
+					//};
+					//DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
+					//DXContext::Get().GetCommandList()->DrawInstanced(staticMesh.m_VertexCount, 1, 0, 0);
+
+					staticMesh.Render();
+				}
+
+				DXContext::Get().EndFrame();
+				DXContext::Get().ExeuteCommandList();
+				DXContext::Get().Preset();
 			}
-			// 对窗口进行渲染
-			DXContext::Get().InitCommandList();
-			DXContext::Get().DrawFrame();
-
-			// 渲染三角形
-			if (p_IsInitShader_Success)
-			{
-				DXContext::Get().GetCommandList()->SetPipelineState(m_PipeState);
-				DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
-				DXContext::Get().GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
-				DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 4, color, 0);
-				DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh.m_CB->GetGPUVirtualAddress());
-				DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
-				DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, sb->GetGPUVirtualAddress());
-
-				DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				//D3D12_VERTEX_BUFFER_VIEW vbos[] = {
-				//	staticMesh.m_VBOView
-				//};
-				//DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
-				//DXContext::Get().GetCommandList()->DrawInstanced(staticMesh.m_VertexCount, 1, 0, 0);
-
-				staticMesh.Render();
-			}
-
-			DXContext::Get().EndFrame();
-			DXContext::Get().ExeuteCommandList();
-			DXContext::Get().Preset();
 		}
 		DXContext::Get().Shutdown();
 		DXWindow::Get().Shutdown();

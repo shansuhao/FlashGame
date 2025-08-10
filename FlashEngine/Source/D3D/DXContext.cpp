@@ -1,17 +1,7 @@
 #include "pch.h"
 #include "DXContext.h"
 #include "Windows/DXWindow.h"
-/*
-	初始化流程
-	
-	创建DXGI
-	创建D3d12设备对象
-	创建命令队列
-	创建围栏
-	创建交换链
-	创建描述符堆
-	获取交换链数据
-*/
+
 bool DXContext::Init()
 {
 	__VERIFY_EXPR(CreateDXGIFactory2(0, IID_PPV_ARGS(&m_dxgiFactory)));
@@ -27,13 +17,14 @@ bool DXContext::Init()
 		{
 			continue;
 		}
-		if (SUCCEEDED(D3D12CreateDevice(0, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_d3dDevice))))
+		if (SUCCEEDED(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), nullptr)))
 		{
 			adapterFound = true;
 			break;
 		}
 		adapterIndex++;
 	}
+	__VERIFY_EXPR(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_d3dDevice)));
 
 	D3D12_COMMAND_QUEUE_DESC cmdQueueDesc{};
 	__VERIFY_EXPR(m_d3dDevice->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(&m_cmdQueue)));
@@ -56,7 +47,7 @@ bool DXContext::Init()
 	}
 
 	__VERIFY_EXPR(m_d3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_cmdAllocator)));
-	__VERIFY_EXPR(m_d3dDevice->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&m_cmdList)));
+	__VERIFY_EXPR(m_d3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_cmdAllocator, nullptr,IID_PPV_ARGS(&m_cmdList)));
 
 	// 记录 GPU 渲染后返回的事件
 	__VERIFY_EXPR(m_d3dDevice->CreateFence(0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS(&m_d3dFence)));
@@ -102,8 +93,9 @@ void DXContext::ExeuteCommandList()
 {
 	if (SUCCEEDED(m_cmdList->Close()))
 	{
-		ID3D12CommandList* lists[] = {m_cmdList};
+		ID3D12CommandList* lists[] = { m_cmdList };
 		m_cmdQueue->ExecuteCommandLists(1, lists);
+		
 		SignalAndWait();
 	}
 }
@@ -112,22 +104,20 @@ bool DXContext::CreateSwapChain()
 {
 	// Create Swap chain
 	DXGI_SWAP_CHAIN_DESC scd{};
+	scd.BufferCount = FrameCount;
+	scd.BufferDesc = {};
 	scd.BufferDesc.Width = DXWindow::Get().GetWidth();
 	scd.BufferDesc.Height = DXWindow::Get().GetHeight();
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	scd.SampleDesc.Count = 1;
-	scd.SampleDesc.Quality = 0;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	scd.BufferCount = FrameCount;
 	scd.OutputWindow = DXWindow::Get().GetHWND();
+	scd.SampleDesc.Count = 1;
 	scd.Windowed = true;
 	scd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
-	IDXGISwapChain* sc1;
+	IDXGISwapChain* sc1 = nullptr;
 	m_dxgiFactory->CreateSwapChain(m_cmdQueue, &scd, &sc1);
-
-	__VERIFY_EXPR(!sc1->QueryInterface(&m_swapChain));
+	m_swapChain = static_cast<IDXGISwapChain3*>(sc1);
 
 	return true;
 }
@@ -156,7 +146,15 @@ bool DXContext::CreateDepthSource()
 	clearValue.DepthStencil.Depth = 1.0f;
 	clearValue.DepthStencil.Stencil = 0;
 	
-	__VERIFY_EXPR(m_d3dDevice->CreateCommittedResource(&d3d_heap_properties, D3D12_HEAP_FLAG_NONE, &d3d12_Resource_desc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clearValue, IID_PPV_ARGS(&m_d3d_ds_resoucre)));
+	__VERIFY_EXPR(m_d3dDevice->CreateCommittedResource(
+		&d3d_heap_properties, 
+		D3D12_HEAP_FLAG_NONE, 
+		&d3d12_Resource_desc, 
+		D3D12_RESOURCE_STATE_DEPTH_WRITE, 
+		&clearValue, 
+		IID_PPV_ARGS(&m_d3d_ds_resoucre)
+	));
+
 	return true;
 }
 
@@ -171,36 +169,30 @@ void DXContext::CreateRTVHeap()
 
 	m_d3dDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvDescHeap));
 
-	auto fristHandle = m_rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
-	auto handleIncrement = m_d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	for (size_t i = 0; i < FrameCount; i++)
-	{
-		m_rtvHandles[i] = fristHandle;
-		m_rtvHandles[i].ptr += handleIncrement * i;
-	}
+	m_RTVDescriptorSize = m_d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+}
+
+void DXContext::UpdateRTVHeap() {
 }
 
 void DXContext::CreateDSVHeap()
 {
 	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc{};
-	//dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	dsvHeapDesc.NumDescriptors = 1;
 	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 
 	m_d3dDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvDescHeap));
+	m_DSVDescriptorSize = m_d3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 }
 
 bool DXContext::GetBuffers()
 {
-	for (size_t i = 0; i < FrameCount; i++)
-	{
-		__VERIFY_EXPR(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_buffers[i])));
-
-		D3D12_RENDER_TARGET_VIEW_DESC rtv{};
-		rtv.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		rtv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-		//m_d3dDevice->CreateRenderTargetView(m_buffers[i], &rtv, m_rtvHandles[i]);
-		m_d3dDevice->CreateRenderTargetView(m_buffers[i], NULL, m_rtvHandles[i]);
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHeapStart = m_rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
+	for (int i = 0; i < FrameCount; i++) {
+		m_swapChain->GetBuffer(i, IID_PPV_ARGS(&m_buffers[i]));
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvPointer;
+		rtvPointer.ptr = rtvHeapStart.ptr + i * m_RTVDescriptorSize;
+		m_d3dDevice->CreateRenderTargetView(m_buffers[i], nullptr, rtvPointer);
 	}
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC d3d_ds_view_desc{};
@@ -213,16 +205,10 @@ bool DXContext::GetBuffers()
 void DXContext::SignalAndWait()
 {
 	m_cmdQueue->Signal(m_d3dFence, ++m_fenceValue);
-	if (SUCCEEDED(m_d3dFence->SetEventOnCompletion(m_fenceValue, m_fenceEvent)))
-	{
-		if (WaitForSingleObject(m_fenceEvent, INFINITE) != WAIT_OBJECT_0)
-		{
-			std::exit(-1);
-		}
-	}
-	else
-	{
-		std::exit(-1);
+
+	if (m_d3dFence->GetCompletedValue() < m_fenceValue) {
+		m_d3dFence->SetEventOnCompletion(m_fenceValue, m_fenceEvent);
+		WaitForSingleObject(m_fenceEvent, INFINITE);
 	}
 }
 
@@ -234,22 +220,24 @@ void DXContext::DrawFrame()
 	barr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	barr.Transition.pResource = m_buffers[m_currentBufferIndex];
-	barr.Transition.Subresource = 0;
+	barr.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 	barr.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 	barr.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 	m_cmdList->ResourceBarrier(1, &barr);
-	m_cmdList->OMSetRenderTargets(1, &m_rtvHandles[m_currentBufferIndex], false, NULL);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv, dsv;
+	dsv.ptr = m_dsvDescHeap->GetCPUDescriptorHandleForHeapStart().ptr;
+	rtv.ptr = m_rtvDescHeap->GetCPUDescriptorHandleForHeapStart().ptr + m_currentBufferIndex * m_RTVDescriptorSize;
+	m_cmdList->OMSetRenderTargets(1, &rtv, false, &dsv);
 
 	D3D12_VIEWPORT viewport = { 0,0, DXWindow::Get().GetWidth(), DXWindow::Get().GetHeight() };
+	D3D12_RECT scissorRect = { 0,0, DXWindow::Get().GetWidth(), DXWindow::Get().GetHeight()};
 	m_cmdList->RSSetViewports(1, &viewport);
-	D3D12_RECT scissorRect = {0,0, DXWindow::Get().GetWidth(), DXWindow::Get().GetHeight()};
 	m_cmdList->RSSetScissorRects(1, &scissorRect);
+
 	float pColor[] = { m_backGroundColor.R, m_backGroundColor.G,m_backGroundColor.B, m_backGroundColor.A };
 
-	m_cmdList->ClearRenderTargetView(m_rtvHandles[m_currentBufferIndex], pColor, 0, nullptr);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE dsv;
-	dsv.ptr = m_dsvDescHeap->GetCPUDescriptorHandleForHeapStart().ptr;
+	m_cmdList->ClearRenderTargetView(rtv, pColor, 0, nullptr);
 	m_cmdList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 }
 
@@ -268,5 +256,5 @@ void DXContext::EndFrame()
 
 void DXContext::Preset()
 {
-	m_swapChain->Present(1, 0);
+	m_swapChain->Present(0, 0);
 }

@@ -51,7 +51,7 @@ void MainGS(triangle VSOut inPoint[3], uint inPrimitiveID : SV_PrimitiveID, inou
 {
     float3 N = normalize(inPoint[0].normal.xyz + inPoint[1].normal.xyz + inPoint[2].normal.xyz);
     float scale = materialData[inPrimitiveID].r;
-    float3 offset = N * abs(sin(color.x * 2.0f)) * 0.2f;
+    float3 offset = N * abs(sin(color.x * 4.0f)) * 0.2f;
     
     VSOut vo;
     float4 positionWS = float4(inPoint[0].position.xyz + offset, 1.0f);

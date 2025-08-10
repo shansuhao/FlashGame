@@ -25,6 +25,7 @@ public:
 	bool CreateSwapChain();
 	bool CreateDepthSource();
 	void CreateRTVHeap();
+	void UpdateRTVHeap();
 	void CreateDSVHeap();
 	bool GetBuffers();
 
@@ -37,15 +38,15 @@ public:
 	void InitCommandList();
 	void ExeuteCommandList();
 
-	static constexpr size_t FrameCount = 2;
+	static constexpr unsigned int FrameCount = 2;
 	static constexpr size_t GetFrameCount(){
 		return FrameCount;
 	}
 
-	inline ComPointer<ID3D12GraphicsCommandList7>& GetCommandList() { return m_cmdList; }
+	inline ComPointer<ID3D12GraphicsCommandList>& GetCommandList() { return m_cmdList; }
 	inline ComPointer<ID3D12Device10>& GetDevice() { return m_d3dDevice; }
 	inline ComPointer<ID3D12CommandQueue>& GetCmdQueue() { return m_cmdQueue; }
-	inline ComPointer<IDXGIFactory7>& GetFactory() { return m_dxgiFactory; }
+	inline ComPointer<IDXGIFactory4>& GetFactory() { return m_dxgiFactory; }
 	inline ComPointer<IDXGISwapChain3>& GetSwapChain() { return m_swapChain; }
 
 	inline void Flush() {
@@ -54,13 +55,14 @@ public:
 			SignalAndWait();
 		}
 	}
+
 private:
-	ComPointer<IDXGIFactory7> m_dxgiFactory;
+	ComPointer<IDXGIFactory4> m_dxgiFactory;
 	ComPointer<ID3D12Device10> m_d3dDevice;
 
 	ComPointer<ID3D12CommandAllocator> m_cmdAllocator;
 	ComPointer<ID3D12CommandQueue> m_cmdQueue;
-	ComPointer<ID3D12GraphicsCommandList7> m_cmdList;
+	ComPointer<ID3D12GraphicsCommandList> m_cmdList;
 
 	ComPointer<ID3D12Fence1> m_d3dFence;
 	HANDLE m_fenceEvent = nullptr;
@@ -72,7 +74,9 @@ private:
 	size_t m_currentBufferIndex = 0;
 
 	ComPointer<ID3D12DescriptorHeap> m_rtvDescHeap;
-	D3D12_CPU_DESCRIPTOR_HANDLE m_rtvHandles[FrameCount];
+
+	UINT m_RTVDescriptorSize = 0;
+	UINT m_DSVDescriptorSize = 0;
 
 	ComPointer<ID3D12DescriptorHeap> m_dsvDescHeap;
 

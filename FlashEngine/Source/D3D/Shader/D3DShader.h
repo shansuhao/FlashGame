@@ -41,6 +41,8 @@ public:
 		BOOL isFromRootSignatureFile = false, D3D12_SHADER_BYTECODE p_RS = {}
 	);
 
+	void Rendering();
+
 	bool CreateTexture2D(ComPointer<ID3D12Resource>& p_VBO, const void* p_PixelData, int p_DataSize, int p_DataWidth, int p_DataHeight, DXGI_FORMAT p_PixelFormat);
 
 private:

@@ -7,7 +7,8 @@ class DXWindow
 private:
 	ATOM		m_WndClass = 0;
 	HINSTANCE	hInstance = GetModuleHandleW(NULL);
-	
+
+	MSG			msg{};
 	HWND		m_hWnd = nullptr;
 	UINT		m_Width = 1920;
 	UINT		m_Height = 1080;
@@ -16,7 +17,7 @@ private:
 	BOOL		m_ShouldResize = false;
 public:
 	bool Init(LPCWSTR p_ClassName, LPCWSTR p_WndName, int32_t p_icon, UINT p_width, UINT p_height);
-	void UpdateWindow();
+	bool UpdateWindow();
 	void Resize();
 	void Shutdown();
 	void SetFullscreen(bool enabled);

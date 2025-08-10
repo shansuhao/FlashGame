@@ -36,7 +36,9 @@ bool StaticMeshComponent::InitFromFile(const char* p_MeshFile) {
 			char name[256] = { 0 };
 			fread(name, 1, temp, pFile);
 			fread(&temp, 4, 1, pFile);
+
 			SubMesh* submesh = new SubMesh;
+			submesh->m_IndexCount = temp;
 			unsigned int* indexes = new unsigned int[temp];
 			fread(indexes, 1, sizeof(unsigned int) * temp, pFile);
 			b_isCreateBufferObject = D3DShader::Get().CreateBufferOBject(submesh->m_IBO, sizeof(unsigned int) * temp,
@@ -66,10 +68,12 @@ void StaticMeshComponent::Render() {
 	{
 		DXContext::Get().GetCommandList()->DrawInstanced(m_VertexCount, 1, 0, 0);
 	}
-	for (auto iter = m_SubMeshes.begin(); iter != m_SubMeshes.end(); iter++)
+	else
 	{
-		DXContext::Get().GetCommandList()->IASetIndexBuffer(&iter->second->m_IBView);
-		DXContext::Get().GetCommandList()->DrawIndexedInstanced(iter->second->m_IndexCount, 1, 0, 0, 0);
+		for (auto iter = m_SubMeshes.begin(); iter != m_SubMeshes.end(); iter++) {
+			DXContext::Get().GetCommandList()->IASetIndexBuffer(&iter->second->m_IBView);
+			DXContext::Get().GetCommandList()->DrawIndexedInstanced(iter->second->m_IndexCount, 1, 0, 0, 0);
+		}
 	}
 }
 

@@ -40,14 +40,16 @@ bool DXWindow::Init(LPCWSTR p_ClassName, LPCWSTR p_WndName, int32_t p_icon, UINT
 	return true;
 }
 
-void DXWindow::UpdateWindow()
+bool DXWindow::UpdateWindow()
 {
-	MSG msg{};
-	while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
+	ZeroMemory(&msg, sizeof(MSG));
+	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 	{
 		TranslateMessage(&msg);
-		DispatchMessageW(&msg);
+		DispatchMessage(&msg);
+		return true;
 	}
+	return false;
 }
 
 void DXWindow::Resize() {
@@ -57,8 +59,8 @@ void DXWindow::Resize() {
 	{
 		m_Width = cr.right - cr.left;
 		m_Height = cr.bottom - cr.top;
-
-		DXContext::Get().GetSwapChain()->ResizeBuffers(DXContext::GetFrameCount(), m_Width, m_Height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING);
+		
+		DXContext::Get().GetSwapChain()->ResizeBuffers(DXContext::GetFrameCount(), m_Width, m_Height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
 		m_ShouldResize = false;
 	}
 	DXContext::Get().GetBuffers();
@@ -101,6 +103,12 @@ void DXWindow::SetFullscreen(bool enabled)
 	{
 		ShowWindow(DXWindow::Get().GetHWND(), SW_MAXIMIZE);
 	}
+
+	RECT rect; 
+	GetClientRect(m_hWnd, &rect);
+	m_Width = rect.right - rect.left;
+	m_Height = rect.bottom - rect.top;
+
 	m_FullWindow = enabled;
 }
 

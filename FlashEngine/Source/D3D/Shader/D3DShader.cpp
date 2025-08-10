@@ -22,7 +22,7 @@ bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComP
 	vertexLayoutDesc.pInputElementDescs = vertexElementDesc;
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.pRootSignature = p_RootSignature;
+	psoDesc.pRootSignature = p_RootSignature.Get();
 	psoDesc.VS = p_vs;
 	psoDesc.PS = p_ps;
 	psoDesc.GS = p_gs;
@@ -44,9 +44,9 @@ bool D3DShader::CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComP
 
 	psoDesc.BlendState = {0};
 	D3D12_RENDER_TARGET_BLEND_DESC rtBlendDesc = {
-		FALSE, FALSE,
-		D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_INV_SRC_ALPHA, D3D12_BLEND_OP_ADD,
-		D3D12_BLEND_SRC_ALPHA, D3D12_BLEND_INV_SRC_ALPHA, D3D12_BLEND_OP_ADD,
+		FALSE,FALSE,
+		D3D12_BLEND_SRC_ALPHA,D3D12_BLEND_INV_SRC_ALPHA,D3D12_BLEND_OP_ADD,
+		D3D12_BLEND_SRC_ALPHA,D3D12_BLEND_INV_SRC_ALPHA,D3D12_BLEND_OP_ADD,
 		D3D12_LOGIC_OP_NOOP,
 		D3D12_COLOR_WRITE_ENABLE_ALL
 	};
@@ -170,10 +170,10 @@ bool D3DShader::CreateConstantBufferOBject(ComPointer<ID3D12Resource>& p_VBO, in
 
 void D3DShader::UpdateConstantBuffer(ComPointer<ID3D12Resource>& p_VBO, void* p_Data, int p_DataLen)
 {
-	D3D12_RANGE uploadRange = {0};
-	unsigned char* pBUffer = nullptr;
-	p_VBO->Map(0, &uploadRange, (void**)(&pBUffer));
-	memcpy(pBUffer, p_Data, p_DataLen);
+	D3D12_RANGE uploadRange = { 0 };
+	unsigned char* pBuffer = nullptr;
+	p_VBO->Map(0, &uploadRange, (void**)(&pBuffer));
+	memcpy(pBuffer, p_Data, p_DataLen);
 	p_VBO->Unmap(0, NULL);
 }
 
@@ -188,7 +188,10 @@ void CreateShaderFromFile(
 	HRESULT hResult = D3DCompileFromFile(inShaderFilePath, nullptr, nullptr,
 		inMainFunctionName, inTarget, D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
 		0, &shaderBuffer, &errorBuffer);
+
 	if (FAILED(hResult)) {
+		char szLog[1024] = { 0 };
+		strcpy_s(szLog, (char*)errorBuffer->GetBufferPointer());
 		printf("CreateShaderFromFile error : [%s][%s]:[%s]\n", inMainFunctionName, inTarget, (char*)errorBuffer->GetBufferPointer());
 		errorBuffer->Release();
 		return;
@@ -205,7 +208,6 @@ void D3DShader::CreateShaderFromFile(LPCTSTR p_ShaderFilePath, const char* p_Mai
 
 	if (FAILED(hResult))
 	{
-		printf("CreateShaderFromFile Error: [%s][%s]:[%s]\n", p_ShaderFilePath, p_Target, (char*)errorBuffer->GetBufferPointer());
 		errorBuffer->Release();
 		return;
 	}
@@ -254,7 +256,7 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	rootParameter[1].Constants.RegisterSpace = 0;
 	rootParameter[1].Constants.ShaderRegister = 1;
 
-	D3D12_DESCRIPTOR_RANGE descRange[1] = {};
+	D3D12_DESCRIPTOR_RANGE descRange[1];
 	descRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	descRange[0].RegisterSpace = 0;
 	descRange[0].BaseShaderRegister = 0;  //t0
@@ -331,6 +333,10 @@ BOOL D3DShader::InitShader(
 	return true;
 }
 
+void D3DShader::Rendering()
+{
+}
+
 bool D3DShader::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture, const void* p_PixelData, int p_DataSize, int p_DataWidth, int p_DataHeight, DXGI_FORMAT p_PixelFormat)
 {
 	D3D12_HEAP_PROPERTIES d3dHeapProperties = {};
@@ -361,9 +367,9 @@ bool D3DShader::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture, const voi
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT subresourceFootprint;
 	DXContext::Get().GetDevice()->GetCopyableFootprints(&d3d12ResourceDesc, 0, 1, 0, &subresourceFootprint, &rowUsed, &rowSizeInBytes, &memorySizeUsed);
 
-	ID3D12Resource* tempBufferObject;
-	d3dHeapProperties = {};
-	d3dHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	ID3D12Resource* tempBufferObject = NULL;
+	D3D12_HEAP_PROPERTIES d3dTempHeapProperties = {};
+	d3dTempHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
 
 	D3D12_RESOURCE_DESC d3d12TempResourceDesc = {};
 	d3d12TempResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -379,7 +385,7 @@ bool D3DShader::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture, const voi
 	d3d12TempResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 	__VERIFY_EXPR(DXContext::Get().GetDevice()->CreateCommittedResource(
-		&d3dHeapProperties,
+		&d3dTempHeapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&d3d12TempResourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
