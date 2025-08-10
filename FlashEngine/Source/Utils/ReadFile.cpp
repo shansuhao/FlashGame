@@ -1,5 +1,7 @@
 #include "pch.h"
+#define STB_IMAGE_IMPLEMENTATION
 #include "ReadFile.h"
+#include "Utils/Utils.h"
 
 void Flash::ReadFile::ReadImage(const char* p_fileName, int* p_ImageWidth, int* p_ImageHeight, int* p_imageChannel, stbi_uc** data)
 {

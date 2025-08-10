@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "D3D/Shader/D3DShader.h"
 #include "StaticMeshComponent.h"
 #include <D3D/DXContext.h>
 
@@ -16,7 +15,7 @@ bool StaticMeshComponent::InitFromFile(const char* p_MeshFile) {
 		m_VertexData = new StaticMeshComponentVertexData[m_VertexCount];
 		fread(m_VertexData, 1, sizeof(StaticMeshComponentVertexData) * m_VertexCount, pFile);
 
-		b_isCreateBufferObject = D3DShader::Get().CreateBufferOBject(m_VBO, sizeof(StaticMeshComponentVertexData) * m_VertexCount,
+		b_isCreateBufferObject = DXContext::Get().CreateBufferOBject(m_VBO, sizeof(StaticMeshComponentVertexData) * m_VertexCount,
 			m_VertexData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 		if (!b_isCreateBufferObject)
@@ -41,7 +40,7 @@ bool StaticMeshComponent::InitFromFile(const char* p_MeshFile) {
 			submesh->m_IndexCount = temp;
 			unsigned int* indexes = new unsigned int[temp];
 			fread(indexes, 1, sizeof(unsigned int) * temp, pFile);
-			b_isCreateBufferObject = D3DShader::Get().CreateBufferOBject(submesh->m_IBO, sizeof(unsigned int) * temp,
+			b_isCreateBufferObject = DXContext::Get().CreateBufferOBject(submesh->m_IBO, sizeof(unsigned int) * temp,
 				indexes, D3D12_RESOURCE_STATE_INDEX_BUFFER);
 			if (!b_isCreateBufferObject)
 			{

@@ -29,6 +29,12 @@ public:
 	void CreateDSVHeap();
 	bool GetBuffers();
 
+	bool CreateBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_DataLen, void* m_Data, D3D12_RESOURCE_STATES p_StateAfter);
+	bool CreateConstantBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_DataLen);
+	bool CreateTexture2D(ComPointer<ID3D12Resource>& p_VBO, const void* p_PixelData, int p_DataSize, int p_DataWidth, int p_DataHeight, DXGI_FORMAT p_PixelFormat);
+	void UpdateConstantBuffer(ComPointer<ID3D12Resource>& p_VBO, void* p_Data, int p_DataLen);
+	void InitResourceBarrier(ComPointer<ID3D12Resource>& inResource, D3D12_RESOURCE_STATES inPrevState, D3D12_RESOURCE_STATES inNextState);
+	
 	void SignalAndWait();
 
 	void DrawFrame();

@@ -202,6 +202,208 @@ bool DXContext::GetBuffers()
 	return true;
 }
 
+
+
+bool DXContext::CreateBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_DataLen, void* m_Data, D3D12_RESOURCE_STATES p_StateAfter)
+{
+	D3D12_HEAP_PROPERTIES HeapProperties{};
+	HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	D3D12_RESOURCE_DESC d3d12_Resource_desc{};
+	d3d12_Resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	d3d12_Resource_desc.Alignment = 0;
+	d3d12_Resource_desc.Width = p_DataLen;
+	d3d12_Resource_desc.Height = 1;
+	d3d12_Resource_desc.DepthOrArraySize = 1;
+	d3d12_Resource_desc.MipLevels = 1;
+	d3d12_Resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+	d3d12_Resource_desc.SampleDesc.Count = 1;
+	d3d12_Resource_desc.SampleDesc.Quality = 0;
+	d3d12_Resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	d3d12_Resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	__VERIFY_EXPR(m_d3dDevice->CreateCommittedResource(
+		&HeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&d3d12_Resource_desc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		NULL,
+		IID_PPV_ARGS(&p_VBO)
+	));
+
+	d3d12_Resource_desc = p_VBO->GetDesc();
+	UINT64 memorySizeUsed = 0;
+	UINT64 rowSizeInBytes = 0;
+	UINT rowUsed = 0;
+
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT subresourceFootprint;
+	m_d3dDevice->GetCopyableFootprints(&d3d12_Resource_desc, 0, 1, 0, &subresourceFootprint, &rowUsed, &rowSizeInBytes, &memorySizeUsed);
+
+	ID3D12Resource* tempBufferObject;
+	HeapProperties = {};
+	HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	__VERIFY_EXPR(m_d3dDevice->CreateCommittedResource(
+		&HeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&d3d12_Resource_desc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		NULL,
+		IID_PPV_ARGS(&tempBufferObject)
+	));
+
+	BYTE* pData;
+	tempBufferObject->Map(0, NULL, reinterpret_cast<void**>(&pData));
+	BYTE* pDstTempBuffer = reinterpret_cast<BYTE*>(pData + subresourceFootprint.Offset);
+	const BYTE* pSrcData = reinterpret_cast<BYTE*>(m_Data);
+	for (size_t i = 0; i < rowUsed; i++)
+	{
+		memcpy(pDstTempBuffer + subresourceFootprint.Footprint.RowPitch * i, pSrcData + rowSizeInBytes * i, rowSizeInBytes);
+	}
+	tempBufferObject->Unmap(0, NULL);
+
+	m_cmdList->CopyBufferRegion(p_VBO, 0, tempBufferObject, 0, subresourceFootprint.Footprint.Width);
+	InitResourceBarrier(p_VBO, D3D12_RESOURCE_STATE_COPY_DEST, p_StateAfter);
+
+	return true;
+}
+
+bool DXContext::CreateConstantBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_DataLen)
+{
+	D3D12_HEAP_PROPERTIES HeapProperties{};
+	HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	D3D12_RESOURCE_DESC d3d12_Resource_desc{};
+	d3d12_Resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	d3d12_Resource_desc.Alignment = 0;
+	d3d12_Resource_desc.Width = p_DataLen;
+	d3d12_Resource_desc.Height = 1;
+	d3d12_Resource_desc.DepthOrArraySize = 1;
+	d3d12_Resource_desc.MipLevels = 1;
+	d3d12_Resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+	d3d12_Resource_desc.SampleDesc.Count = 1;
+	d3d12_Resource_desc.SampleDesc.Quality = 0;
+	d3d12_Resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	d3d12_Resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	__VERIFY_EXPR(m_d3dDevice->CreateCommittedResource(
+		&HeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&d3d12_Resource_desc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		NULL,
+		IID_PPV_ARGS(&p_VBO)
+	));
+	return true;
+}
+
+void DXContext::UpdateConstantBuffer(ComPointer<ID3D12Resource>& p_VBO, void* p_Data, int p_DataLen)
+{
+	D3D12_RANGE uploadRange = { 0 };
+	unsigned char* pBuffer = nullptr;
+	p_VBO->Map(0, &uploadRange, (void**)(&pBuffer));
+	memcpy(pBuffer, p_Data, p_DataLen);
+	p_VBO->Unmap(0, NULL);
+}
+
+bool DXContext::CreateTexture2D(ComPointer<ID3D12Resource>& p_Texture, const void* p_PixelData, int p_DataSize, int p_DataWidth, int p_DataHeight, DXGI_FORMAT p_PixelFormat)
+{
+	D3D12_HEAP_PROPERTIES d3dHeapProperties = {};
+	d3dHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	D3D12_RESOURCE_DESC d3d12ResourceDesc = {};
+	d3d12ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	d3d12ResourceDesc.Alignment = 0;
+	d3d12ResourceDesc.Width = p_DataWidth;
+	d3d12ResourceDesc.Height = p_DataHeight;
+	d3d12ResourceDesc.DepthOrArraySize = 1;
+	d3d12ResourceDesc.MipLevels = 1;
+	d3d12ResourceDesc.Format = p_PixelFormat;
+	d3d12ResourceDesc.SampleDesc.Count = 1;
+	d3d12ResourceDesc.SampleDesc.Quality = 0;
+	d3d12ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	d3d12ResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	HRESULT hResult = m_d3dDevice->CreateCommittedResource(&d3dHeapProperties, D3D12_HEAP_FLAG_NONE
+		, &d3d12ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&p_Texture));
+	__VERIFY_EXPR(hResult);
+
+	d3d12ResourceDesc = p_Texture->GetDesc();
+	UINT64 memorySizeUsed = 0;
+	UINT64 rowSizeInBytes = 0;
+	UINT rowUsed = 0;
+
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT subresourceFootprint;
+	m_d3dDevice->GetCopyableFootprints(&d3d12ResourceDesc, 0, 1, 0, &subresourceFootprint, &rowUsed, &rowSizeInBytes, &memorySizeUsed);
+
+	ID3D12Resource* tempBufferObject = NULL;
+	D3D12_HEAP_PROPERTIES d3dTempHeapProperties = {};
+	d3dTempHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	D3D12_RESOURCE_DESC d3d12TempResourceDesc = {};
+	d3d12TempResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	d3d12TempResourceDesc.Alignment = 0;
+	d3d12TempResourceDesc.Width = memorySizeUsed;
+	d3d12TempResourceDesc.Height = 1;
+	d3d12TempResourceDesc.DepthOrArraySize = 1;
+	d3d12TempResourceDesc.MipLevels = 1;
+	d3d12TempResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	d3d12TempResourceDesc.SampleDesc.Count = 1;
+	d3d12TempResourceDesc.SampleDesc.Quality = 0;
+	d3d12TempResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	d3d12TempResourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	__VERIFY_EXPR(m_d3dDevice->CreateCommittedResource(
+		&d3dTempHeapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&d3d12TempResourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		NULL,
+		IID_PPV_ARGS(&tempBufferObject)
+	));
+
+	BYTE* pData;
+	tempBufferObject->Map(0, NULL, reinterpret_cast<void**>(&pData));
+	BYTE* pDstTempBuffer = reinterpret_cast<BYTE*>(pData + subresourceFootprint.Offset);
+	const BYTE* pSrcData = reinterpret_cast<const BYTE*>(p_PixelData);
+	for (size_t i = 0; i < rowUsed; i++)
+	{
+		memcpy(pDstTempBuffer + subresourceFootprint.Footprint.RowPitch * i, pSrcData + rowSizeInBytes * i, rowSizeInBytes);
+	}
+	tempBufferObject->Unmap(0, NULL);
+
+	D3D12_TEXTURE_COPY_LOCATION dst = {};
+	dst.pResource = p_Texture;
+	dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	dst.SubresourceIndex = 0;
+
+	D3D12_TEXTURE_COPY_LOCATION src = {};
+	src.pResource = tempBufferObject;
+	src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+	src.PlacedFootprint = subresourceFootprint;
+	m_cmdList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+	InitResourceBarrier(p_Texture,
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	return true;
+}
+
+void DXContext::InitResourceBarrier(
+	ComPointer<ID3D12Resource>& inResource, D3D12_RESOURCE_STATES inPrevState,
+	D3D12_RESOURCE_STATES inNextState)
+{
+	D3D12_RESOURCE_BARRIER d3d12ResourceBarrier;
+	memset(&d3d12ResourceBarrier, 0, sizeof(d3d12ResourceBarrier));
+	d3d12ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	d3d12ResourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	d3d12ResourceBarrier.Transition.pResource = inResource;
+	d3d12ResourceBarrier.Transition.StateBefore = inPrevState;
+	d3d12ResourceBarrier.Transition.StateAfter = inNextState;
+	d3d12ResourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	m_cmdList->ResourceBarrier(1, &d3d12ResourceBarrier);
+}
+
+
 void DXContext::SignalAndWait()
 {
 	m_cmdQueue->Signal(m_d3dFence, ++m_fenceValue);

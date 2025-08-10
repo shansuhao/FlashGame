@@ -4,10 +4,11 @@
 #include "D3D/DXContext.h"
 #include "resource.h"
 
+#include <string>
+#include <iostream>
+
 #define WND_CLASS_NAME		L"FlashExample"
 #define WND_WIDTH			1920
 #define WND_HEIGHT			1080
-
-#define STB_IMAGE_IMPLEMENTATION
 
 #pragma comment(lib, "winmm.lib")

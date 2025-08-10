@@ -18,33 +18,42 @@ public:
 		static D3DShader self;
 		return self;
 	}
+	inline float* GetColor() { return color; }
 
+	inline D3D12_SHADER_BYTECODE* GetVS() { return &m_vs; }
+	inline D3D12_SHADER_BYTECODE* GetPS() { return &m_ps; }
+	inline D3D12_SHADER_BYTECODE* GetGS() { return &m_gs; }
+	inline D3D12_SHADER_BYTECODE* GetRS() { return &m_rs; }
+
+	inline ComPointer<ID3D12DescriptorHeap>& GetSRVHeap() { return m_srvHeap; }
+	inline ComPointer<ID3D12Resource>& GetSB() { return m_sb; }
+private:
+	float color[4] = { 0.5f, 0.5f, 0.5f, 1.f };
+
+	D3D12_SHADER_BYTECODE m_vs = {};
+	D3D12_SHADER_BYTECODE m_ps = {};
+	D3D12_SHADER_BYTECODE m_gs = {};
+	D3D12_SHADER_BYTECODE m_rs = {};
+	ComPointer<ID3D12DescriptorHeap> m_srvHeap;
+	ComPointer<ID3D12PipelineState> m_PipeState;
+	ComPointer<ID3D12RootSignature> m_RootSignature;
+	ComPointer<ID3D12Resource> m_sb;
 public:
 	// PSO
 	bool CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12PipelineState>& p_PipeState, D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps, D3D12_SHADER_BYTECODE p_gs);
-	void InitResourceBarrier(ComPointer<ID3D12Resource>& inResource, D3D12_RESOURCE_STATES inPrevState, D3D12_RESOURCE_STATES inNextState);
-	//bool CreateBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_DataLen, void* m_Data, D3D12_RESOURCE_STATES p_StateAfter);
-	bool CreateConstantBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_DataLen);
-	void UpdateConstantBuffer(ComPointer<ID3D12Resource>& p_VBO, void* p_Data, int p_DataLen);
+
 	bool InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignature);
 	bool InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignature, D3D12_SHADER_BYTECODE p_RS);
 
 	void CreateShaderFromFile(LPCTSTR p_ShaderFilePath, const char* p_MainFunctionName, const char* p_Target, D3D12_SHADER_BYTECODE* p_Shader);
 	void InitShaderFile(LPCTSTR p_ShaderFilePath, D3D12_SHADER_BYTECODE* p_Shader);
 
-	bool CreateBufferOBject(ComPointer<ID3D12Resource>& p_VBO, int p_DataLen, void* m_Data, D3D12_RESOURCE_STATES p_StateAfter);
+	BOOL InitShader(BOOL isFromRootSignatureFile = false);
 
-	BOOL InitShader(
-		ComPointer<ID3D12RootSignature>& p_RootSignature,
-		ComPointer<ID3D12PipelineState>& p_PipeState,
-		D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps, D3D12_SHADER_BYTECODE p_gs,
-		BOOL isFromRootSignatureFile = false, D3D12_SHADER_BYTECODE p_RS = {}
-	);
+	bool InitRender(StaticMeshComponent* staticMesh);
+	void Rendering(StaticMeshComponent* staticMesh);
 
-	void Rendering();
-
-	bool CreateTexture2D(ComPointer<ID3D12Resource>& p_VBO, const void* p_PixelData, int p_DataSize, int p_DataWidth, int p_DataHeight, DXGI_FORMAT p_PixelFormat);
-
+	void Shutdown();
 private:
 	D3DShader() = default;
 };

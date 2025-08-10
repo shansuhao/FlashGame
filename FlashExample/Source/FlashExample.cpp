@@ -12,32 +12,27 @@ int main(int argc, char* argv) {
 
 	if (DXWindow::Get().Init(WND_CLASS_NAME, WND_CLASS_NAME, IDI_ICON1, WND_WIDTH, WND_HEIGHT) && DXContext::Get().Init())
 	{
-		DXWindow::Get().SetFullscreen(true);
+		//DXWindow::Get().SetFullscreen(true);
 
 		BOOL p_IsInitShader_Success = false;
 		
 		StaticMeshComponent staticMesh;
-		D3D12_SHADER_BYTECODE t_vs = {};
-		D3D12_SHADER_BYTECODE t_ps = {};
-		D3D12_SHADER_BYTECODE t_gs = {};
-		D3D12_SHADER_BYTECODE t_RootSignature = {};
-
+		
 		//D3DShader::Get().InitShaderFile(L"VertexShader.cso", &t_vs);
 		//D3DShader::Get().InitShaderFile(L"PixelShader.cso", &t_ps);
 		//D3DShader::Get().InitShaderFile(L"RootSignature.cso", &t_RootSignature); 
 
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainVS", "vs_5_1", &t_vs);
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainGS", "gs_5_1", &t_gs);
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainPS", "ps_5_1", &t_ps);
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainVS", "vs_5_1", D3DShader::Get().GetVS());
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainGS", "gs_5_1", D3DShader::Get().GetGS());
+		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainPS", "ps_5_1", D3DShader::Get().GetPS());
+
 		ComPointer<ID3D12PipelineState> m_PipeState;
 		ComPointer<ID3D12RootSignature> m_RootSignature;
 
 		//DXContext::Get().InitCommandList();
 		p_IsInitShader_Success = staticMesh.InitFromFile("Resource/Model/Sphere.lhsm");
-		p_IsInitShader_Success = D3DShader::Get().InitShader(
-			m_RootSignature, m_PipeState, t_vs, t_ps, t_gs, false, t_RootSignature
-		);
-		p_IsInitShader_Success = D3DShader::Get().CreateConstantBufferOBject(staticMesh.m_CB, 65536);
+		p_IsInitShader_Success = D3DShader::Get().InitShader(false);
+		p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(staticMesh.m_CB, 65536);
 
 		DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
 			(45.0f * 3.141592f) / 180.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
@@ -60,10 +55,9 @@ int main(int argc, char* argv) {
 			DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
 			memcpy(matrix + 48, &tempMatrix, sizeof(float) * 16);
 		}
-		D3DShader::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 64);
+		DXContext::Get().UpdateConstantBuffer(staticMesh.m_CB, matrix, sizeof(float) * 64);
 
-		ComPointer<ID3D12Resource> sb;
-		p_IsInitShader_Success = D3DShader::Get().CreateConstantBufferOBject(sb, 65536);
+		p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(D3DShader::Get().GetSB(), 65536);
 		struct MaterialData {
 			float r;
 		};
@@ -72,7 +66,7 @@ int main(int argc, char* argv) {
 		{
 			materialDatas[i].r = srandom() * 0.1f + 0.1f;
 		}
-		D3DShader::Get().UpdateConstantBuffer(sb, materialDatas, sizeof(MaterialData) * 3000);
+		DXContext::Get().UpdateConstantBuffer(D3DShader::Get().GetSB(), materialDatas, sizeof(MaterialData) * 3000);
 
 		// 生成图片
 		unsigned char* particlePixels = new unsigned char[256 * 256 * 4];
@@ -102,20 +96,17 @@ int main(int argc, char* argv) {
 		int imageWidth, imageHeight, imageChannel;
 		ComPointer<ID3D12Resource> texture, texturePartice;
 		Flash::ReadFile::ReadImage("Resource/Image/earth_d.jpg", &imageWidth, &imageHeight, &imageChannel, &data);
-		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texture, data, imageWidth * imageHeight * imageChannel, imageWidth, imageHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
-		p_IsInitShader_Success = D3DShader::Get().CreateTexture2D(texturePartice, particlePixels, 256 * 256 * 4, 256, 256, DXGI_FORMAT_R8G8B8A8_UNORM);
+		p_IsInitShader_Success = DXContext::Get().CreateTexture2D(texture, data, imageWidth * imageHeight * imageChannel, imageWidth, imageHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
+		p_IsInitShader_Success = DXContext::Get().CreateTexture2D(texturePartice, particlePixels, 256 * 256 * 4, 256, 256, DXGI_FORMAT_R8G8B8A8_UNORM);
 		delete[] particlePixels;
 		delete data;
 
 		/*******************************************************************************************************/
-		ID3D12DescriptorHeap* srvHeap = NULL;
 		D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc{};
 		srvHeapDesc.NumDescriptors = 3;
 		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		DXContext::Get().GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&srvHeap));
-
-		ID3D12DescriptorHeap* descriptorHeaps[] = { srvHeap };
+		DXContext::Get().GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(& D3DShader::Get().GetSRVHeap() ));
 
 		/*******************************************************************************************************/
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -123,7 +114,7 @@ int main(int argc, char* argv) {
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
-		D3D12_CPU_DESCRIPTOR_HANDLE srvHeapPtr = srvHeap->GetCPUDescriptorHandleForHeapStart();
+		D3D12_CPU_DESCRIPTOR_HANDLE srvHeapPtr = D3DShader::Get().GetSRVHeap()->GetCPUDescriptorHandleForHeapStart();
 		DXContext::Get().GetDevice()->CreateShaderResourceView(texture.Get(), &srvDesc, srvHeapPtr);
 
 		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -139,7 +130,7 @@ int main(int argc, char* argv) {
 		sbSRVDesc.Buffer.StructureByteStride = sizeof(MaterialData);
 
 		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		DXContext::Get().GetDevice()->CreateShaderResourceView(sb.Get(), &sbSRVDesc, srvHeapPtr);
+		DXContext::Get().GetDevice()->CreateShaderResourceView(D3DShader::Get().GetSB().Get(), &sbSRVDesc, srvHeapPtr);
 		/*******************************************************************************************************/
 
 		DXContext::Get().ExeuteCommandList();
@@ -154,13 +145,6 @@ int main(int argc, char* argv) {
 		while (!DXWindow::Get().ShouldClose())
 		{
 			if (!DXWindow::Get().UpdateWindow()){
-				DWORD current_time = timeGetTime();
-				DWORD frameTime = current_time - last_time;
-				DWORD timeSinceAppStartInMS = current_time - appStartTime;
-				last_time = current_time;
-				float deltaTimeInSecond = float(frameTime) / 1000.0f;
-				float timeSinceAppStartInSecond = float(timeSinceAppStartInMS) / 1000.0f;
-				color[0] = timeSinceAppStartInSecond;
 
 				if (DXWindow::Get().ShouldResize())
 				{
@@ -175,25 +159,15 @@ int main(int argc, char* argv) {
 				// 渲染三角形
 				if (p_IsInitShader_Success)
 				{
+					DWORD current_time = timeGetTime();
+					DWORD frameTime = current_time - last_time;
+					DWORD timeSinceAppStartInMS = current_time - appStartTime;
+					last_time = current_time;
+					float deltaTimeInSecond = float(frameTime) / 1000.0f;
+					float timeSinceAppStartInSecond = float(timeSinceAppStartInMS) / 1000.0f;
+					D3DShader::Get().GetColor()[0] = timeSinceAppStartInSecond;
 
-
-
-					DXContext::Get().GetCommandList()->SetPipelineState(m_PipeState);
-					DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
-					DXContext::Get().GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-					DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 4, color, 0);
-					DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh.m_CB->GetGPUVirtualAddress());
-					DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, srvHeap->GetGPUDescriptorHandleForHeapStart());
-					DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, sb->GetGPUVirtualAddress());
-					DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-					//D3D12_VERTEX_BUFFER_VIEW vbos[] = {
-					//	staticMesh.m_VBOView
-					//};
-					//DXContext::Get().GetCommandList()->IASetVertexBuffers(0, 1, vbos);
-					//DXContext::Get().GetCommandList()->DrawInstanced(staticMesh.m_VertexCount, 1, 0, 0);
-
-					staticMesh.Render();
+					D3DShader::Get().Rendering(&staticMesh);
 				}
 
 				DXContext::Get().EndFrame();
@@ -201,6 +175,7 @@ int main(int argc, char* argv) {
 				DXContext::Get().Preset();
 			}
 		}
+		D3DShader::Get().Shutdown();
 		DXContext::Get().Shutdown();
 		DXWindow::Get().Shutdown();
 	}
