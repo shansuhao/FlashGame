@@ -1,8 +1,8 @@
 #include "FlashExample.h"
+#include "Utils/Utils.h"
 #include "Utils/ReadFile.h"
 #include "D3D/Shader/D3DShader.h"
 #include "D3D/Mesh/StaticMeshComponent.h"
-#include <Utils/Utils.h>
 
 int main(int argc, char* argv) {
 
@@ -15,6 +15,7 @@ int main(int argc, char* argv) {
 		//DXWindow::Get().SetFullscreen(true);
 
 		BOOL p_IsInitShader_Success = false;
+		std::string projectDir = Flash::GetProjectDir();
 		
 		StaticMeshComponent staticMesh;
 		
@@ -22,15 +23,15 @@ int main(int argc, char* argv) {
 		//D3DShader::Get().InitShaderFile(L"PixelShader.cso", &t_ps);
 		//D3DShader::Get().InitShaderFile(L"RootSignature.cso", &t_RootSignature); 
 
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainVS", "vs_5_1", D3DShader::Get().GetVS());
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainGS", "gs_5_1", D3DShader::Get().GetGS());
-		D3DShader::Get().CreateShaderFromFile(L"Shaders/gs.hlsl", "MainPS", "ps_5_1", D3DShader::Get().GetPS());
+		p_IsInitShader_Success = staticMesh.InitFromFile(staticMesh.GetMeshFile().c_str());
+		D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(staticMesh.GetShaderFile().c_str()), "MainVS", "vs_5_1", D3DShader::Get().GetVS());
+		D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(staticMesh.GetShaderFile().c_str()), "MainGS", "gs_5_1", D3DShader::Get().GetGS());
+		D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(staticMesh.GetShaderFile().c_str()), "MainPS", "ps_5_1", D3DShader::Get().GetPS());
 
 		ComPointer<ID3D12PipelineState> m_PipeState;
 		ComPointer<ID3D12RootSignature> m_RootSignature;
 
 		//DXContext::Get().InitCommandList();
-		p_IsInitShader_Success = staticMesh.InitFromFile("Resource/Model/Sphere.lhsm");
 		p_IsInitShader_Success = D3DShader::Get().InitShader(false);
 		p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(staticMesh.m_CB, 65536);
 
@@ -64,7 +65,7 @@ int main(int argc, char* argv) {
 		MaterialData* materialDatas = new MaterialData[3000];
 		for (int i = 0; i < 3000; i++)
 		{
-			materialDatas[i].r = srandom() * 0.1f + 0.1f;
+			materialDatas[i].r = Flash::srandom() * 0.1f + 0.1f;
 		}
 		DXContext::Get().UpdateConstantBuffer(D3DShader::Get().GetSB(), materialDatas, sizeof(MaterialData) * 3000);
 
@@ -95,7 +96,7 @@ int main(int argc, char* argv) {
 		stbi_uc* data = nullptr;
 		int imageWidth, imageHeight, imageChannel;
 		ComPointer<ID3D12Resource> texture, texturePartice;
-		Flash::ReadFile::ReadImage("Resource/Image/earth_d.jpg", &imageWidth, &imageHeight, &imageChannel, &data);
+		Flash::ReadFile::ReadImage(staticMesh.GetMeshTexture().c_str(), &imageWidth, &imageHeight, &imageChannel, &data);
 		p_IsInitShader_Success = DXContext::Get().CreateTexture2D(texture, data, imageWidth * imageHeight * imageChannel, imageWidth, imageHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
 		p_IsInitShader_Success = DXContext::Get().CreateTexture2D(texturePartice, particlePixels, 256 * 256 * 4, 256, 256, DXGI_FORMAT_R8G8B8A8_UNORM);
 		delete[] particlePixels;
@@ -132,7 +133,6 @@ int main(int argc, char* argv) {
 		srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		DXContext::Get().GetDevice()->CreateShaderResourceView(D3DShader::Get().GetSB().Get(), &sbSRVDesc, srvHeapPtr);
 		/*******************************************************************************************************/
-
 		DXContext::Get().ExeuteCommandList();
 
 		ShowWindow(DXWindow::Get().GetHWND(), SW_SHOWDEFAULT);
@@ -156,7 +156,6 @@ int main(int argc, char* argv) {
 				DXContext::Get().InitCommandList();
 				DXContext::Get().DrawFrame();
 
-				// äÖÈ¾Èý½ÇÐÎ
 				if (p_IsInitShader_Success)
 				{
 					DWORD current_time = timeGetTime();

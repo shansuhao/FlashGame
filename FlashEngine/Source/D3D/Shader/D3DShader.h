@@ -38,6 +38,10 @@ private:
 	ComPointer<ID3D12PipelineState> m_PipeState;
 	ComPointer<ID3D12RootSignature> m_RootSignature;
 	ComPointer<ID3D12Resource> m_sb;
+
+public:
+	DirectX::XMMATRIX m_ProjectionMatrix;
+	DirectX::XMMATRIX m_ViewMatrix;
 public:
 	// PSO
 	bool CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12PipelineState>& p_PipeState, D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps, D3D12_SHADER_BYTECODE p_gs);

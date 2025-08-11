@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <unordered_map>
 #include <D3D/D3DLibary.h>
 #include <Utils/ComPointer.h>
@@ -57,6 +58,13 @@ struct SubMesh {
 class StaticMeshComponent {
 public:
 	StaticMeshComponent() = default;
+	StaticMeshComponent(std::string p_MeshFile, std::string p_ShaderFile, std::string p_MeshTexture) : m_MeshFile(p_MeshFile), m_ShaderFile(p_ShaderFile), m_MeshTexture(p_MeshTexture) {};
+
+private:
+	std::string m_MeshFile = "";
+	std::string m_ShaderFile = "";
+	std::string m_MeshTexture = "";
+
 public:
 	int m_VertexCount;
 	ComPointer<ID3D12Resource> m_VBO;
@@ -72,6 +80,10 @@ public:
 	inline ComPointer<ID3D12Resource> GetVBO()const { return m_VBO; }
 	inline D3D12_VERTEX_BUFFER_VIEW& GetVBOView() { return m_VBOView; }
 	inline int GetVertexCount() { return m_VertexCount; }
+
+	inline std::string GetMeshFile() { return m_MeshFile; }
+	inline std::string GetShaderFile() { return m_ShaderFile; }
+	inline std::string GetMeshTexture() { return m_MeshTexture; }
 
 	void Render();
 	void CreateVBOView();
