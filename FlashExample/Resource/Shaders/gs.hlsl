@@ -16,7 +16,9 @@ struct VSOut
 static const float PI = 3.141592f;
 cbuffer globalConstants : register(b0)
 {
-    float color;
+    float4x4 ProjectionMatrix;
+    float4x4 ViewMatrix;
+    float4 misc;
 };
 
 Texture2D T_DiffuserTexture : register(t0);
@@ -30,8 +32,6 @@ StructuredBuffer<MaterialData> materialData : register(t0, space1);
 
 cbuffer DefaultVertexCB : register(b1)
 {
-    float4x4 ProjectionMatrix;
-    float4x4 ViewMatrix;
     float4x4 ModelMatrix;
     float4x4 IT_ModelMatrix;
     float4x4 ReservedMemory[1020];
@@ -51,7 +51,7 @@ void MainGS(triangle VSOut inPoint[3], uint inPrimitiveID : SV_PrimitiveID, inou
 {
     float3 N = normalize(inPoint[0].normal.xyz + inPoint[1].normal.xyz + inPoint[2].normal.xyz);
     float scale = materialData[inPrimitiveID].r;
-    float3 offset = N * abs(sin(color.x * 4.0f)) * 0.2f;
+    float3 offset = N * abs(sin(misc.x * 4.0f)) * 0.2f;
     
     VSOut vo;
     float4 positionWS = float4(inPoint[0].position.xyz + offset, 1.0f);
@@ -86,10 +86,7 @@ float4 MainPS(VSOut inPsInput) : SV_Target
     theta += 0.5f; //0.0~1.0
     float ambientColorIntensity = 1.0;
     float3 ambientColor = lerp(bottomColor, topColor, theta) * ambientColorIntensity;
-
-    // float4 colorFromTexture = tex[0].Sample(samplerState, inPsInput.texcoord.xy);
-    // float4 particleColor = tex[1].Sample(samplerState, inPsInput.texcoord.xy);
     float4 diffuserColor = T_DiffuserTexture.Sample(samplerState, inPsInput.texcoord.xy);
-    float3 surfaceColor = diffuserColor.rgb; //mul(colorFromTexture.rgb, particleColor.rgb);
+    float3 surfaceColor = diffuserColor.rgb;
     return float4(surfaceColor, 1.0f);
 }

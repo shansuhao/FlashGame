@@ -136,7 +136,7 @@ bool D3DShader::InitRootSignature(ComPointer<ID3D12RootSignature>& p_RootSignatu
 	rootParameter[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParameter[0].Constants.RegisterSpace = 0;
 	rootParameter[0].Constants.ShaderRegister = 0;
-	rootParameter[0].Constants.Num32BitValues = 4;
+	rootParameter[0].Constants.Num32BitValues = 36;
 
 	rootParameter[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootParameter[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -234,29 +234,31 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 	p_IsInitShader_Success = InitShader(false);
 	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(staticMesh->m_CB, 65536);
 
-	DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
+	m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		(45.0f * 3.141592f) / 180.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
-	DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixIdentity();
+	m_ViewMatrix = DirectX::XMMatrixIdentity();
 	DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 5.f);
 	//modelMatrix *= DirectX::XMMatrixRotationY(90.0f*3.1415926f/180.0f);
-	DirectX::XMFLOAT4X4 tempMatrix;
 
-	float matrix[64];
-	DirectX::XMStoreFloat4x4(&tempMatrix, projectionMatrix);
-	memcpy(matrix, &tempMatrix, sizeof(float) * 16);
-	DirectX::XMStoreFloat4x4(&tempMatrix, viewMatrix);
-	memcpy(matrix + 16, &tempMatrix, sizeof(float) * 16);
+	//float matrix[64];
+	//DirectX::XMStoreFloat4x4(&tempMatrix, m_ProjectionMatrix);
+	//memcpy(matrix, &tempMatrix, sizeof(float) * 16);
+	//DirectX::XMStoreFloat4x4(&tempMatrix, m_ViewMatrix);
+	//memcpy(matrix + 16, &tempMatrix, sizeof(float) * 16);
+
+	DirectX::XMFLOAT4X4 tempMatrix;
+	float matrices[32];
 	DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
-	memcpy(matrix + 32, &tempMatrix, sizeof(float) * 16);
+	memcpy(matrices, &tempMatrix, sizeof(float) * 16);
 	DirectX::XMVECTOR determinant;
 	DirectX::XMMATRIX inverseModelMatrix = DirectX::XMMatrixInverse(&determinant, modelMatrix);
 	if (DirectX::XMVectorGetX(determinant) != 0.0f)
 	{
 		DirectX::XMMATRIX normalMatrix = DirectX::XMMatrixTranspose(inverseModelMatrix);
 		DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
-		memcpy(matrix + 48, &tempMatrix, sizeof(float) * 16);
+		memcpy(matrices + 16, &tempMatrix, sizeof(float) * 16);
 	}
-	DXContext::Get().UpdateConstantBuffer(staticMesh->m_CB, matrix, sizeof(float) * 64);
+	DXContext::Get().UpdateConstantBuffer(staticMesh->m_CB, matrices, sizeof(float) * 32);
 
 	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(m_sb, 65536);
 	struct MaterialData {
@@ -353,7 +355,7 @@ void D3DShader::Rendering(StaticMeshComponent* staticMesh)
 	DXContext::Get().GetCommandList()->SetPipelineState(m_PipeState);
 	DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
 	DXContext::Get().GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 4, color, 0);
+	DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 36, &globalConstants, 0);
 	DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh->m_CB->GetGPUVirtualAddress());
 	DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, m_srvHeap->GetGPUDescriptorHandleForHeapStart());
 	DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, m_sb->GetGPUVirtualAddress());
