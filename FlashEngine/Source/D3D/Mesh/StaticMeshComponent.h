@@ -61,7 +61,6 @@ public:
 	StaticMeshComponent(std::string p_MeshFile, std::string p_ShaderFile, std::string p_MeshTexture) : m_MeshFile(p_MeshFile), m_ShaderFile(p_ShaderFile), m_MeshTexture(p_MeshTexture) {};
 	~StaticMeshComponent() {
 		m_VBO.Release();
-		m_CB.Release();
 		m_texture.Release();
 		m_texturePartice.Release();
 	}
@@ -74,7 +73,6 @@ private:
 public:
 	int m_VertexCount;
 	ComPointer<ID3D12Resource> m_VBO;
-	ComPointer<ID3D12Resource> m_CB;
 	D3D12_VERTEX_BUFFER_VIEW m_VBOView;
 	StaticMeshComponentVertexData* m_VertexData;
 

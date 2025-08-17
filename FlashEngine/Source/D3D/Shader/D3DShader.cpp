@@ -211,7 +211,7 @@ BOOL D3DShader::InitShader(BOOL isFromRootSignatureFile)
 	{
 		if (!InitRootSignature(m_RootSignature)) return false;
 	}
-	if (!CreatePSO(m_RootSignature, m_PipeState, m_vs, m_ps, m_gs)) return false;
+	if (!CreatePSO(m_RootSignature, m_Material->m_PipeState, m_vs, m_ps, m_gs)) return false;
 
 	return true;
 }
@@ -219,7 +219,7 @@ BOOL D3DShader::InitShader(BOOL isFromRootSignatureFile)
 bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 {
 	bool p_IsInitShader_Success = false;
-
+	m_Material = new Material;
 	//D3DShader::Get().InitShaderFile(L"VertexShader.cso", &t_vs);
 			//D3DShader::Get().InitShaderFile(L"PixelShader.cso", &t_ps);
 			//D3DShader::Get().InitShaderFile(L"RootSignature.cso", &t_RootSignature); 
@@ -232,7 +232,7 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 
 	//DXContext::Get().InitCommandList();
 	p_IsInitShader_Success = InitShader(false);
-	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(staticMesh->m_CB, 65536);
+	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(m_Material->m_ConstantBuffer, 65536);
 
 	m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		(45.0f * 3.141592f) / 180.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
@@ -260,9 +260,9 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 		DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
 		memcpy(matrices + 16, &tempMatrix, sizeof(float) * 16);
 	}
-	DXContext::Get().UpdateConstantBuffer(staticMesh->m_CB, matrices, sizeof(float) * 32);
+	DXContext::Get().UpdateConstantBuffer(m_Material->m_ConstantBuffer, matrices, sizeof(float) * 32);
 
-	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(m_sb, 65536);
+	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(m_Material->m_StructuredBuffer, 65536);
 	struct MaterialData {
 		float r;
 	};
@@ -271,7 +271,7 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 	{
 		materialDatas[i].r = Flash::srandom() * 0.1f + 0.1f;
 	}
-	DXContext::Get().UpdateConstantBuffer(m_sb, materialDatas, sizeof(MaterialData) * 3000);
+	DXContext::Get().UpdateConstantBuffer(m_Material->m_StructuredBuffer, materialDatas, sizeof(MaterialData) * 3000);
 
 	// Éú³ÉÍ¼Æ¬
 	unsigned char* particlePixels = new unsigned char[256 * 256 * 4];
@@ -306,12 +306,6 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 	delete data;
 
 	/*******************************************************************************************************/
-	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc{};
-	srvHeapDesc.NumDescriptors = 3;
-	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	DXContext::Get().GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(& m_srvHeap));
-	/*******************************************************************************************************/
 	D3D12_CPU_DESCRIPTOR_HANDLE srvHeapPtr;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -319,7 +313,7 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = 1;
-	srvHeapPtr = m_srvHeap->GetCPUDescriptorHandleForHeapStart();
+	srvHeapPtr = m_Material->m_srvHeap->GetCPUDescriptorHandleForHeapStart();
 	DXContext::Get().GetDevice()->CreateShaderResourceView(staticMesh->GetTexture().Get(), &srvDesc, srvHeapPtr);
 
 	srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -335,7 +329,7 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 	sbSRVDesc.Buffer.StructureByteStride = sizeof(MaterialData);
 
 	srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	DXContext::Get().GetDevice()->CreateShaderResourceView(m_sb.Get(), &sbSRVDesc, srvHeapPtr);
+	DXContext::Get().GetDevice()->CreateShaderResourceView(m_Material->m_StructuredBuffer.Get(), &sbSRVDesc, srvHeapPtr);
 	/*******************************************************************************************************/
 
 	DXContext::Get().ExeuteCommandList();
@@ -352,15 +346,15 @@ void D3DShader::Rendering(StaticMeshComponent* staticMesh)
 	memcpy(globalConstants.mViewMatrix, &tempMatrix, sizeof(float) * 16);
 	globalConstants.mMisc[0] = color[0];
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { m_srvHeap };
+	ID3D12DescriptorHeap* descriptorHeaps[] = { m_Material->m_srvHeap };
 
-	DXContext::Get().GetCommandList()->SetPipelineState(m_PipeState);
+	DXContext::Get().GetCommandList()->SetPipelineState(m_Material->m_PipeState);
 	DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
 	DXContext::Get().GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 36, &globalConstants, 0);
-	DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, staticMesh->m_CB->GetGPUVirtualAddress());
-	DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, m_srvHeap->GetGPUDescriptorHandleForHeapStart());
-	DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, m_sb->GetGPUVirtualAddress());
+	DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, m_Material->m_ConstantBuffer->GetGPUVirtualAddress());
+	DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, m_Material->m_srvHeap->GetGPUDescriptorHandleForHeapStart());
+	DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, m_Material->m_StructuredBuffer->GetGPUVirtualAddress());
 	DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//D3D12_VERTEX_BUFFER_VIEW vbos[] = {

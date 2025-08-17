@@ -1,4 +1,5 @@
 #pragma once
+#include "Material.h"
 #include "Camera/Camera.h"
 #include "D3D/D3DLibary.h"
 #include "Utils/ComPointer.h"
@@ -26,8 +27,7 @@ public:
 	inline D3D12_SHADER_BYTECODE* GetGS() { return &m_gs; }
 	inline D3D12_SHADER_BYTECODE* GetRS() { return &m_rs; }
 
-	inline ComPointer<ID3D12DescriptorHeap>& GetSRVHeap() { return m_srvHeap; }
-	inline ComPointer<ID3D12Resource>& GetSB() { return m_sb; }
+	Material* m_Material;
 private:
 	float color[4] = { 0.5f, 0.5f, 0.5f, 1.f };
 
@@ -35,10 +35,8 @@ private:
 	D3D12_SHADER_BYTECODE m_ps = {};
 	D3D12_SHADER_BYTECODE m_gs = {};
 	D3D12_SHADER_BYTECODE m_rs = {};
-	ComPointer<ID3D12DescriptorHeap> m_srvHeap;
-	ComPointer<ID3D12PipelineState> m_PipeState;
+
 	ComPointer<ID3D12RootSignature> m_RootSignature;
-	ComPointer<ID3D12Resource> m_sb;
 
 public:
 	DirectX::XMMATRIX m_ProjectionMatrix;

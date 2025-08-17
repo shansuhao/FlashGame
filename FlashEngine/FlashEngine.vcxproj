@@ -160,6 +160,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\D3D\Shader\Material.h" />
     <ClInclude Include="Source\Camera\Camera.h" />
     <ClInclude Include="Source\Utils\ReadFile.h" />
     <ClInclude Include="Source\D3D\Mesh\StaticMeshComponent.h" />
@@ -177,6 +178,7 @@
     <ClInclude Include="Source\Windows\DXWindow.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\D3D\Shader\Material.cpp" />
     <ClCompile Include="Source\Camera\Camera.cpp" />
     <ClCompile Include="Source\Utils\ReadFile.cpp" />
     <ClCompile Include="Source\D3D\Mesh\StaticMeshComponent.cpp" />
