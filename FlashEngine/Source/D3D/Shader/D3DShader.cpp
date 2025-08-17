@@ -221,8 +221,8 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 	bool p_IsInitShader_Success = false;
 	m_Material = new Material;
 	//D3DShader::Get().InitShaderFile(L"VertexShader.cso", &t_vs);
-			//D3DShader::Get().InitShaderFile(L"PixelShader.cso", &t_ps);
-			//D3DShader::Get().InitShaderFile(L"RootSignature.cso", &t_RootSignature); 
+	//D3DShader::Get().InitShaderFile(L"PixelShader.cso", &t_ps);
+	//D3DShader::Get().InitShaderFile(L"RootSignature.cso", &t_RootSignature); 
 
 	p_IsInitShader_Success = staticMesh->InitFromFile(staticMesh->GetMeshFile().c_str());
 	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(staticMesh->GetShaderFile().c_str()), "MainVS", "vs_5_1", D3DShader::Get().GetVS());
@@ -241,12 +241,6 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 
 	DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.f);
 	//modelMatrix *= DirectX::XMMatrixRotationY(90.0f*3.1415926f/180.0f);
-
-	//float matrix[64];
-	//DirectX::XMStoreFloat4x4(&tempMatrix, m_ProjectionMatrix);
-	//memcpy(matrix, &tempMatrix, sizeof(float) * 16);
-	//DirectX::XMStoreFloat4x4(&tempMatrix, m_ViewMatrix);
-	//memcpy(matrix + 16, &tempMatrix, sizeof(float) * 16);
 
 	DirectX::XMFLOAT4X4 tempMatrix;
 	float matrices[32];
@@ -305,32 +299,9 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 	delete[] particlePixels;
 	delete data;
 
-	/*******************************************************************************************************/
-	D3D12_CPU_DESCRIPTOR_HANDLE srvHeapPtr;
-
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
-	srvHeapPtr = m_Material->m_srvHeap->GetCPUDescriptorHandleForHeapStart();
-	DXContext::Get().GetDevice()->CreateShaderResourceView(staticMesh->GetTexture().Get(), &srvDesc, srvHeapPtr);
-
-	srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	DXContext::Get().GetDevice()->CreateShaderResourceView(staticMesh->GetTexturePartice().Get(), &srvDesc, srvHeapPtr);
-	/*******************************************************************************************************/
-	D3D12_SHADER_RESOURCE_VIEW_DESC sbSRVDesc = {};
-	sbSRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	sbSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
-	sbSRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	sbSRVDesc.Buffer.FirstElement = 0;
-	sbSRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-	sbSRVDesc.Buffer.NumElements = 3000;
-	sbSRVDesc.Buffer.StructureByteStride = sizeof(MaterialData);
-
-	srvHeapPtr.ptr += DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	DXContext::Get().GetDevice()->CreateShaderResourceView(m_Material->m_StructuredBuffer.Get(), &sbSRVDesc, srvHeapPtr);
-	/*******************************************************************************************************/
+	m_Material->SetTexture2D(0, staticMesh->GetTexture());
+	m_Material->SetTexture2D(1, staticMesh->GetTexturePartice());
+	m_Material->SetStructuredBuffer(16, m_Material->m_StructuredBuffer, sizeof(MaterialData), 3000);
 
 	DXContext::Get().ExeuteCommandList();
 	return p_IsInitShader_Success;
