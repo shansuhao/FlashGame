@@ -247,47 +247,23 @@ bool D3DShader::InitRender()
 	m_SphereNode->m_StaticMeshComponent->m_Material = t_Material;
 
 	p_IsInitShader_Success = m_SphereNode->m_StaticMeshComponent->InitFromFile(m_SphereNode->m_StaticMeshComponent->GetMeshFile().c_str());
-	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(m_SphereNode->m_StaticMeshComponent->GetShaderFile().c_str()), "MainVS", "vs_5_1", D3DShader::Get().GetVS());
-	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(m_SphereNode->m_StaticMeshComponent->GetShaderFile().c_str()), "MainGS", "gs_5_1", D3DShader::Get().GetGS());
-	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(m_SphereNode->m_StaticMeshComponent->GetShaderFile().c_str()), "MainPS", "ps_5_1", D3DShader::Get().GetPS());
+	LPCTSTR ShaderFile = Flash::StringToLPCTSTR(m_SphereNode->m_StaticMeshComponent->GetShaderFile().c_str());
+	D3DShader::Get().CreateShaderFromFile(ShaderFile, "MainVS", "vs_5_1", D3DShader::Get().GetVS());
+	D3DShader::Get().CreateShaderFromFile(ShaderFile, "MainGS", "gs_5_1", D3DShader::Get().GetGS());
+	D3DShader::Get().CreateShaderFromFile(ShaderFile, "MainPS", "ps_5_1", D3DShader::Get().GetPS());
 
 	p_IsInitShader_Success = InitShader(false);
 	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(t_Material->m_ConstantBuffer, 65536);
 
+	t_Material->Test();
+
 	m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		(45.0f * 3.141592f) / 180.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
-	m_MainCamera.Update(0.0f,5.0f,-10.0f, 0.0f,0.0f,1.0f, 0.0f,1.0f,0.0f);
-
-	DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.f);
-	DirectX::XMFLOAT4X4 tempMatrix;
-	float matrices[32];
-	DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
-	memcpy(matrices, &tempMatrix, sizeof(float) * 16);
-	DirectX::XMVECTOR determinant;
-	DirectX::XMMATRIX inverseModelMatrix = DirectX::XMMatrixInverse(&determinant, modelMatrix);
-	if (DirectX::XMVectorGetX(determinant) != 0.0f)
-	{
-		DirectX::XMMATRIX normalMatrix = DirectX::XMMatrixTranspose(inverseModelMatrix);
-		DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
-		memcpy(matrices + 16, &tempMatrix, sizeof(float) * 16);
-	}
-	DXContext::Get().UpdateConstantBuffer(t_Material->m_ConstantBuffer, matrices, sizeof(float) * 32);
-
-	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(t_Material->m_StructuredBuffer, 65536);
-	struct MaterialData {
-		float r;
-	};
-	MaterialData* materialDatas = new MaterialData[3000];
-	for (int i = 0; i < 3000; i++)
-	{
-		materialDatas[i].r = Flash::srandom() * 0.1f + 0.1f;
-	}
-	DXContext::Get().UpdateConstantBuffer(t_Material->m_StructuredBuffer, materialDatas, sizeof(MaterialData) * 3000);
+	m_MainCamera.Update(0.0f,5.0f,-5.0f, 0.0f,0.0f,1.0f, 0.0f,1.0f,0.0f);
 
 	Texture2D* texutre2D = LoadTexture2DFromFile(m_SphereNode->m_StaticMeshComponent->GetMeshTexture().c_str(), m_SphereNode->m_StaticMeshComponent->GetTexture());
 
 	t_Material->SetTexture2D(0, texutre2D->mResource, 1, texutre2D->mFormat);
-	t_Material->SetStructuredBuffer(16, t_Material->m_StructuredBuffer, sizeof(MaterialData), 3000);
 
 	DXContext::Get().ExeuteCommandList();
 	return p_IsInitShader_Success;

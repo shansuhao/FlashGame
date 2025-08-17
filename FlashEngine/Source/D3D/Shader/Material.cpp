@@ -1,6 +1,10 @@
 #include "pch.h"
 #include "Material.h"
+
+#include "Utils/Utils.h"
 #include "D3D/DXContext.h"
+
+#define StructuredBufferIndexStart 16
 
 Material::Material()
 {
@@ -9,6 +13,9 @@ Material::Material()
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	DXContext::Get().GetDevice()->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&m_srvHeap));
+
+	DXContext::Get().CreateConstantBufferOBject(m_ConstantBuffer, 65536);
+	DXContext::Get().CreateConstantBufferOBject(m_StructuredBuffer, 65536);
 }
 
 void Material::SetTexture2D(int inSRVIndex, ComPointer<ID3D12Resource>& inResource, int inMipMapLevelCount, DXGI_FORMAT inFormat)
@@ -49,4 +56,15 @@ void Material::Active()
 	DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, m_ConstantBuffer->GetGPUVirtualAddress());
 	DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, m_srvHeap->GetGPUDescriptorHandleForHeapStart());
 	DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, m_StructuredBuffer->GetGPUVirtualAddress());
+}
+
+void Material::Test()
+{
+	float* materialDatas = new float[3000];
+	for (int i = 0; i < 3000; i++)
+	{
+		materialDatas[i] = Flash::srandom() * 0.1f + 0.1f;
+	}
+	DXContext::Get().UpdateConstantBuffer(m_StructuredBuffer, materialDatas, sizeof(float) * 3000);
+	SetStructuredBuffer(StructuredBufferIndexStart, m_StructuredBuffer, sizeof(float), 3000);
 }
