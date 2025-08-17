@@ -5,6 +5,10 @@
 #include "Utils/ComPointer.h"
 #include "D3D/Mesh/StaticMeshComponent.h"
 
+struct Texture2D {
+	ComPointer<ID3D12Resource> mResource;
+	DXGI_FORMAT mFormat;
+};
 /*
 * 渲染：
 *	后续拆分为三部分：网格体、材质、纹理
@@ -51,6 +55,8 @@ public:
 
 	void CreateShaderFromFile(LPCTSTR p_ShaderFilePath, const char* p_MainFunctionName, const char* p_Target, D3D12_SHADER_BYTECODE* p_Shader);
 	void InitShaderFile(LPCTSTR p_ShaderFilePath, D3D12_SHADER_BYTECODE* p_Shader);
+
+	Texture2D* LoadTexture2DFromFile(const char* inFilePath, ComPointer<ID3D12Resource>& texture);
 
 	BOOL InitShader(BOOL isFromRootSignatureFile = false);
 

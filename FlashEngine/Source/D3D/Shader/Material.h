@@ -14,7 +14,9 @@ public:
 	ComPointer<ID3D12PipelineState> m_PipeState;
 
 	Material();
+
 	void SetTexture2D(int inSRVIndex, ComPointer<ID3D12Resource>& inResource, int inMipMapLevelCount = 1, DXGI_FORMAT inFormat = DXGI_FORMAT_R8G8B8A8_UNORM);
 	void SetStructuredBuffer(int inSRVIndex, ComPointer<ID3D12Resource>& inResource, int inPerElementSize = 0, int inElementCount = 0);
+	void Active();
 };
 

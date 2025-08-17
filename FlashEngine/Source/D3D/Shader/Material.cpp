@@ -39,3 +39,14 @@ void Material::SetStructuredBuffer(int inSRVIndex, ComPointer<ID3D12Resource>& i
 	srvHeapPtr.ptr += inSRVIndex * DXContext::Get().GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	DXContext::Get().GetDevice()->CreateShaderResourceView(inResource.Get(), &sbSRVDesc, srvHeapPtr);
 }
+
+void Material::Active()
+{
+	ID3D12DescriptorHeap* descriptorHeaps[] = { m_srvHeap };
+
+	DXContext::Get().GetCommandList()->SetPipelineState(m_PipeState);
+	DXContext::Get().GetCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+	DXContext::Get().GetCommandList()->SetGraphicsRootConstantBufferView(1, m_ConstantBuffer->GetGPUVirtualAddress());
+	DXContext::Get().GetCommandList()->SetGraphicsRootDescriptorTable(2, m_srvHeap->GetGPUDescriptorHandleForHeapStart());
+	DXContext::Get().GetCommandList()->SetGraphicsRootShaderResourceView(3, m_StructuredBuffer->GetGPUVirtualAddress());
+}
