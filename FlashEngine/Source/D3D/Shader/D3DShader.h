@@ -1,6 +1,9 @@
 #pragma once
+
 #include "Material.h"
+#include "SceneNode.h"
 #include "Camera/Camera.h"
+
 #include "D3D/D3DLibary.h"
 #include "Utils/ComPointer.h"
 #include "D3D/Mesh/StaticMeshComponent.h"
@@ -31,7 +34,7 @@ public:
 	inline D3D12_SHADER_BYTECODE* GetGS() { return &m_gs; }
 	inline D3D12_SHADER_BYTECODE* GetRS() { return &m_rs; }
 
-	Material* m_Material;
+	SceneNode* m_SphereNode = NULL;
 private:
 	float color[4] = { 0.5f, 0.5f, 0.5f, 1.f };
 
@@ -60,8 +63,8 @@ public:
 
 	BOOL InitShader(BOOL isFromRootSignatureFile = false);
 
-	bool InitRender(StaticMeshComponent* staticMesh);
-	void Rendering(StaticMeshComponent* staticMesh);
+	bool InitRender();
+	void Rendering();
 
 	void Shutdown();
 private:

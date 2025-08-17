@@ -63,6 +63,9 @@
     <ClInclude Include="Source\D3D\Shader\Material.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Source\D3D\Shader\SceneNode.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -99,6 +102,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Source\D3D\Shader\Material.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\D3D\Shader\SceneNode.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

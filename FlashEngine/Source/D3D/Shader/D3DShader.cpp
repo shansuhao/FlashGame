@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "D3DShader.h"
+
 #include "Utils/Utils.h"
 #include "Utils/ReadFile.h"
 #include "D3D/DXContext.h"
@@ -225,23 +226,33 @@ BOOL D3DShader::InitShader(BOOL isFromRootSignatureFile)
 	{
 		if (!InitRootSignature(m_RootSignature)) return false;
 	}
-	if (!CreatePSO(m_RootSignature, m_Material->m_PipeState, m_vs, m_ps, m_gs)) return false;
+	if (!CreatePSO(m_RootSignature, m_SphereNode->m_StaticMeshComponent->m_Material->m_PipeState, m_vs, m_ps, m_gs)) return false;
 
 	return true;
 }
 
-bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
+bool D3DShader::InitRender()
 {
 	bool p_IsInitShader_Success = false;
-	m_Material = new Material;
+	m_SphereNode = new SceneNode;
 
-	p_IsInitShader_Success = staticMesh->InitFromFile(staticMesh->GetMeshFile().c_str());
-	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(staticMesh->GetShaderFile().c_str()), "MainVS", "vs_5_1", D3DShader::Get().GetVS());
-	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(staticMesh->GetShaderFile().c_str()), "MainGS", "gs_5_1", D3DShader::Get().GetGS());
-	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(staticMesh->GetShaderFile().c_str()), "MainPS", "ps_5_1", D3DShader::Get().GetPS());
+	std::string projectDir = Flash::GetProjectDir();
+	std::cout << "ProjectDir:" << projectDir << std::endl;
+	m_SphereNode->m_StaticMeshComponent = new StaticMeshComponent(projectDir + "\\Resource\\Model\\Sphere.lhsm",
+		projectDir + "\\Resource\\Shaders\\gs.hlsl",
+		projectDir + "\\Resource\\Image\\earth_d.jpg"
+	);
+
+	Material* t_Material = new Material;
+	m_SphereNode->m_StaticMeshComponent->m_Material = t_Material;
+
+	p_IsInitShader_Success = m_SphereNode->m_StaticMeshComponent->InitFromFile(m_SphereNode->m_StaticMeshComponent->GetMeshFile().c_str());
+	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(m_SphereNode->m_StaticMeshComponent->GetShaderFile().c_str()), "MainVS", "vs_5_1", D3DShader::Get().GetVS());
+	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(m_SphereNode->m_StaticMeshComponent->GetShaderFile().c_str()), "MainGS", "gs_5_1", D3DShader::Get().GetGS());
+	D3DShader::Get().CreateShaderFromFile(Flash::StringToLPCTSTR(m_SphereNode->m_StaticMeshComponent->GetShaderFile().c_str()), "MainPS", "ps_5_1", D3DShader::Get().GetPS());
 
 	p_IsInitShader_Success = InitShader(false);
-	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(m_Material->m_ConstantBuffer, 65536);
+	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(t_Material->m_ConstantBuffer, 65536);
 
 	m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		(45.0f * 3.141592f) / 180.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
@@ -260,9 +271,9 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 		DirectX::XMStoreFloat4x4(&tempMatrix, modelMatrix);
 		memcpy(matrices + 16, &tempMatrix, sizeof(float) * 16);
 	}
-	DXContext::Get().UpdateConstantBuffer(m_Material->m_ConstantBuffer, matrices, sizeof(float) * 32);
+	DXContext::Get().UpdateConstantBuffer(t_Material->m_ConstantBuffer, matrices, sizeof(float) * 32);
 
-	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(m_Material->m_StructuredBuffer, 65536);
+	p_IsInitShader_Success = DXContext::Get().CreateConstantBufferOBject(t_Material->m_StructuredBuffer, 65536);
 	struct MaterialData {
 		float r;
 	};
@@ -271,18 +282,18 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 	{
 		materialDatas[i].r = Flash::srandom() * 0.1f + 0.1f;
 	}
-	DXContext::Get().UpdateConstantBuffer(m_Material->m_StructuredBuffer, materialDatas, sizeof(MaterialData) * 3000);
+	DXContext::Get().UpdateConstantBuffer(t_Material->m_StructuredBuffer, materialDatas, sizeof(MaterialData) * 3000);
 
-	Texture2D* texutre2D = LoadTexture2DFromFile(staticMesh->GetMeshTexture().c_str(), staticMesh->GetTexture());
+	Texture2D* texutre2D = LoadTexture2DFromFile(m_SphereNode->m_StaticMeshComponent->GetMeshTexture().c_str(), m_SphereNode->m_StaticMeshComponent->GetTexture());
 
-	m_Material->SetTexture2D(0, texutre2D->mResource, 1, texutre2D->mFormat);
-	m_Material->SetStructuredBuffer(16, m_Material->m_StructuredBuffer, sizeof(MaterialData), 3000);
+	t_Material->SetTexture2D(0, texutre2D->mResource, 1, texutre2D->mFormat);
+	t_Material->SetStructuredBuffer(16, t_Material->m_StructuredBuffer, sizeof(MaterialData), 3000);
 
 	DXContext::Get().ExeuteCommandList();
 	return p_IsInitShader_Success;
 }
 
-void D3DShader::Rendering(StaticMeshComponent* staticMesh)
+void D3DShader::Rendering()
 {
 	Flash::GlobalConstants globalConstants;
 	DirectX::XMFLOAT4X4 tempMatrix;
@@ -294,11 +305,9 @@ void D3DShader::Rendering(StaticMeshComponent* staticMesh)
 
 	DXContext::Get().GetCommandList()->SetGraphicsRootSignature(m_RootSignature);
 	DXContext::Get().GetCommandList()->SetGraphicsRoot32BitConstants(0, 36, &globalConstants, 0);
-
-	m_Material->Active();
-
 	DXContext::Get().GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	staticMesh->Render();
+
+	m_SphereNode->Render();
 }
 
 void D3DShader::Shutdown() {

@@ -15,15 +15,8 @@ int main(int argc, char* argv) {
 		//DXWindow::Get().SetFullscreen(true);
 
 		BOOL p_IsInitShader_Success = false;
-		std::string projectDir = Flash::GetProjectDir();
-		std::cout << "ProjectDir:" << projectDir << std::endl;
-
-		StaticMeshComponent staticMesh(projectDir + "\\Resource\\Model\\Sphere.lhsm", 
-			projectDir + "\\Resource\\Shaders\\gs.hlsl", 
-			projectDir + "\\Resource\\Image\\earth_d.jpg"
-		);
 		
-		p_IsInitShader_Success = D3DShader::Get().InitRender(&staticMesh);
+		p_IsInitShader_Success = D3DShader::Get().InitRender();
 
 		ShowWindow(DXWindow::Get().GetHWND(), SW_SHOWDEFAULT);
 		UpdateWindow(DXWindow::Get().GetHWND());
@@ -56,7 +49,7 @@ int main(int argc, char* argv) {
 					float timeSinceAppStartInSecond = float(timeSinceAppStartInMS) / 1000.0f;
 					D3DShader::Get().GetColor()[0] = timeSinceAppStartInSecond;
 
-					D3DShader::Get().Rendering(&staticMesh);
+					D3DShader::Get().Rendering();
 				}
 
 				DXContext::Get().EndFrame();

@@ -3,7 +3,9 @@
 #include <unordered_map>
 #include <D3D/D3DLibary.h>
 #include <Utils/ComPointer.h>
+#include "D3D/Shader/Material.h"
 
+class Material;
 struct Vector4d {
 	float X, Y, Z, W = 0;
 	
@@ -58,7 +60,9 @@ struct SubMesh {
 class StaticMeshComponent {
 public:
 	StaticMeshComponent() = default;
-	StaticMeshComponent(std::string p_MeshFile, std::string p_ShaderFile, std::string p_MeshTexture) : m_MeshFile(p_MeshFile), m_ShaderFile(p_ShaderFile), m_MeshTexture(p_MeshTexture) {};
+	StaticMeshComponent(std::string p_MeshFile, std::string p_ShaderFile, std::string p_MeshTexture) : m_MeshFile(p_MeshFile), m_ShaderFile(p_ShaderFile), m_MeshTexture(p_MeshTexture) {
+	};
+
 	~StaticMeshComponent() {
 		m_VBO.Release();
 		m_texture.Release();
@@ -72,6 +76,7 @@ private:
 	ComPointer<ID3D12Resource> m_texture, m_texturePartice;
 public:
 	int m_VertexCount;
+	Material* m_Material;
 	ComPointer<ID3D12Resource> m_VBO;
 	D3D12_VERTEX_BUFFER_VIEW m_VBOView;
 	StaticMeshComponentVertexData* m_VertexData;
