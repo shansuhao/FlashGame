@@ -17,6 +17,7 @@ int main(int argc, char* argv) {
 		BOOL p_IsInitShader_Success = false;
 		std::string projectDir = Flash::GetProjectDir();
 		std::cout << "ProjectDir:" << projectDir << std::endl;
+
 		StaticMeshComponent staticMesh(projectDir + "\\Resource\\Model\\Sphere.lhsm", 
 			projectDir + "\\Resource\\Shaders\\gs.hlsl", 
 			projectDir + "\\Resource\\Image\\earth_d.jpg"

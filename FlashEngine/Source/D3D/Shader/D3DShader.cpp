@@ -236,8 +236,10 @@ bool D3DShader::InitRender(StaticMeshComponent* staticMesh)
 
 	m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(
 		(45.0f * 3.141592f) / 180.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
-	m_ViewMatrix = DirectX::XMMatrixIdentity();
-	DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 5.f);
+	//m_MainCamera.mViewMatrix = DirectX::XMMatrixIdentity();
+	m_MainCamera.Update(0.0f,5.0f,-10.0f, 0.0f,0.0f,1.0f, 0.0f,1.0f,0.0f);
+
+	DirectX::XMMATRIX modelMatrix = DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.f);
 	//modelMatrix *= DirectX::XMMatrixRotationY(90.0f*3.1415926f/180.0f);
 
 	//float matrix[64];
@@ -346,7 +348,7 @@ void D3DShader::Rendering(StaticMeshComponent* staticMesh)
 	DirectX::XMFLOAT4X4 tempMatrix;
 	DirectX::XMStoreFloat4x4(&tempMatrix, m_ProjectionMatrix);
 	memcpy(globalConstants.mProjectionMatrix, &tempMatrix, sizeof(float) * 16);
-	DirectX::XMStoreFloat4x4(&tempMatrix, m_ViewMatrix);
+	DirectX::XMStoreFloat4x4(&tempMatrix, m_MainCamera.mViewMatrix);
 	memcpy(globalConstants.mViewMatrix, &tempMatrix, sizeof(float) * 16);
 	globalConstants.mMisc[0] = color[0];
 

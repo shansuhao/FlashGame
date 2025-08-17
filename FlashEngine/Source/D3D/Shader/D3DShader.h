@@ -1,4 +1,5 @@
 #pragma once
+#include "Camera/Camera.h"
 #include "D3D/D3DLibary.h"
 #include "Utils/ComPointer.h"
 #include "D3D/Mesh/StaticMeshComponent.h"
@@ -41,7 +42,8 @@ private:
 
 public:
 	DirectX::XMMATRIX m_ProjectionMatrix;
-	DirectX::XMMATRIX m_ViewMatrix;
+
+	Camera m_MainCamera;
 public:
 	// PSO
 	bool CreatePSO(ComPointer<ID3D12RootSignature>& p_RootSignature, ComPointer<ID3D12PipelineState>& p_PipeState, D3D12_SHADER_BYTECODE p_vs, D3D12_SHADER_BYTECODE p_ps, D3D12_SHADER_BYTECODE p_gs);
